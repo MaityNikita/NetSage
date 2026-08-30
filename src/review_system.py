@@ -650,12 +650,91 @@ HTML_TEMPLATE = """
             outline: none;
             border-color: var(--primary);
         }
+
+        /* PREMIUM DUAL-TAB & GLASSMETRICS STYLES */
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background-color: rgba(11, 15, 25, 0.4);
+            padding: 0.25rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .nav-tab {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-tab:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-tab.active {
+            color: var(--text-main);
+            background-color: var(--primary);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .glass-card {
+            background: rgba(22, 31, 48, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        /* TABLE STYLING */
+        #log-table {
+            border-spacing: 0;
+            width: 100%;
+        }
+        #log-table tbody tr {
+            border-bottom: 1px solid rgba(36, 53, 79, 0.3);
+            transition: background-color 0.2s ease;
+        }
+        #log-table tbody tr:hover {
+            background-color: rgba(36, 53, 79, 0.15);
+        }
+        #log-table th, #log-table td {
+            padding: 1rem 1.2rem;
+            vertical-align: top;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1><span>🛡️</span> NetSage AI Advisor</h1>
+        <div style="display:flex; align-items:center; gap:2.5rem;">
+            <h1><span>🛡️</span> NetSage AI Advisor</h1>
+            <div class="nav-tabs">
+                <button class="nav-tab active" id="tab-audit" onclick="switchTab('audit')">🔍 Audit Gate</button>
+                <button class="nav-tab" id="tab-insights" onclick="switchTab('insights')">📊 System Insights</button>
+            </div>
+        </div>
+        
         <div class="header-controls">
             <div class="stats-summary">
                 <div class="stat-badge">Total Cases: <span class="num" id="stat-total">0</span></div>
@@ -669,7 +748,7 @@ HTML_TEMPLATE = """
 
     <div class="main-container">
         <!-- SIDEBAR -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar-panel">
             <div class="sidebar-title">Networking Cases</div>
             <ul class="case-list" id="case-list-ul">
                 <!-- Populated dynamically -->
@@ -680,6 +759,103 @@ HTML_TEMPLATE = """
         <div class="workspace" id="workspace-div">
             <div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-secondary)">
                 Select a network case to begin evaluation and human validation.
+            </div>
+        </div>
+
+        <!-- INSIGHTS VIEW (Dashboard) -->
+        <div class="workspace" id="insights-div" style="display:none; gap:1.8rem; width:100%;">
+            <div class="detail-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                <span class="detail-title" style="font-size: 1.5rem;">📊 System Insights & Performance</span>
+                <span style="font-size:0.9rem; color:var(--text-secondary)">Human-in-the-Loop metrics & AI accuracy tracking</span>
+            </div>
+            
+            <!-- KPI Dashboard Row -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1.5rem; width:100%;">
+                <!-- Agreement Rate circular progress card -->
+                <div class="glass-card" style="display:flex; align-items:center; gap:1.5rem;">
+                    <div style="position:relative; width:80px; height:80px;">
+                        <svg width="80" height="80">
+                            <circle cx="40" cy="40" r="32" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="none"/>
+                            <circle cx="40" cy="40" r="32" stroke="var(--accent)" stroke-width="6" fill="none"
+                                    stroke-dasharray="201" stroke-dashoffset="201" id="insights-ring" 
+                                    style="transition: stroke-dashoffset 1s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%;"/>
+                        </svg>
+                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:1.1rem; font-weight:700; color:var(--accent);" id="insights-rate">0%</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05rem;">Agreement Rate</div>
+                        <div style="font-size:1.4rem; font-weight:700; color:var(--text-main);" id="insights-rate-text">0.00%</div>
+                    </div>
+                </div>
+                
+                <!-- KPI Total cases -->
+                <div class="glass-card">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05rem; margin-bottom:0.25rem;">Total Cases</div>
+                    <div style="font-size:2rem; font-weight:700; color:var(--text-main);" id="kpi-total">0</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Diagnostic database size</div>
+                </div>
+                
+                <!-- KPI Accepted -->
+                <div class="glass-card">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05rem; margin-bottom:0.25rem;">Accepted</div>
+                    <div style="font-size:2rem; font-weight:700; color:var(--success);" id="kpi-accepted">0</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">AI diagnoses verified correct</div>
+                </div>
+                
+                <!-- KPI Edited -->
+                <div class="glass-card">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05rem; margin-bottom:0.25rem;">Edited (Overrides)</div>
+                    <div style="font-size:2rem; font-weight:700; color:var(--warning);" id="kpi-edited">0</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Human parameter corrections</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:1.5rem; width:100%;">
+                <div class="workspace-panel">
+                    <div class="w-panel-header">Accuracy Status Breakdown</div>
+                    <div class="w-panel-body" style="align-items:center; justify-content:center; min-height:300px; background:#0e1422;">
+                        <img id="chart-status" src="" alt="Review status breakdown" style="max-width:100%; max-height:280px; object-fit:contain;">
+                    </div>
+                </div>
+                
+                <div class="workspace-panel">
+                    <div class="w-panel-header">Faults by OSI Layer</div>
+                    <div class="w-panel-body" style="align-items:center; justify-content:center; min-height:300px; background:#0e1422;">
+                        <img id="chart-layer" src="" alt="OSI layer distribution" style="max-width:100%; max-height:280px; object-fit:contain;">
+                    </div>
+                </div>
+                
+                <div class="workspace-panel">
+                    <div class="w-panel-header">Rule-Based vs LLM Solved</div>
+                    <div class="w-panel-body" style="align-items:center; justify-content:center; min-height:300px; background:#0e1422;">
+                        <img id="chart-determinism" src="" alt="Rule vs LLM breakdown" style="max-width:100%; max-height:280px; object-fit:contain;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsible AI Correction Log Table -->
+            <div class="workspace-panel" style="width:100%;">
+                <div class="w-panel-header" style="justify-content: space-between; align-items: center; display: flex; width: 100%;">
+                    <span>🛡️ Responsible AI Corrective Audit Log</span>
+                    <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:normal;">Real-time Human-in-the-Loop overrides & justification</span>
+                </div>
+                <div class="w-panel-body" style="padding:0; overflow-x:auto;">
+                    <table id="log-table">
+                        <thead>
+                            <tr style="background-color:rgba(11,15,25,0.5); border-bottom:1px solid var(--border-color); color:var(--text-secondary);">
+                                <th style="text-align:left; font-weight:600;">Case ID</th>
+                                <th style="text-align:left; font-weight:600;">Domain</th>
+                                <th style="text-align:left; font-weight:600; width:30%;">AI Suspected Fault</th>
+                                <th style="text-align:left; font-weight:600; width:30%;">Human Corrected Fault</th>
+                                <th style="text-align:left; font-weight:600; width:25%;">Auditor Notes & Justification</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-table-body" style="color:var(--text-main);">
+                            <!-- Table rows loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -722,22 +898,22 @@ HTML_TEMPLATE = """
             
             cases.forEach(c => {
                 const li = document.createElement('li');
-                li.className = `case-item \${activeCase && activeCase.id === c.id ? 'active' : ''}`;
+                li.className = `case-item ${activeCase && activeCase.id === c.id ? 'active' : ''}`;
                 li.onclick = () => selectCase(c.id);
                 
                 let label = 'Pending';
                 let cls = 'st-pending';
                 if (c.review_status) {
                     label = c.review_status;
-                    cls = `st-\${c.review_status.toLowerCase()}`;
+                    cls = `st-${c.review_status.toLowerCase()}`;
                 }
                 
                 li.innerHTML = `
                     <div class="case-meta">
-                        <span class="case-id">\${c.id}</span>
-                        <span class="case-domain">\${c.domain}</span>
+                        <span class="case-id">${c.id}</span>
+                        <span class="case-domain">${c.domain}</span>
                     </div>
-                    <span class="status-badge \${cls}">\${label}</span>
+                    <span class="status-badge ${cls}">${label}</span>
                 `;
                 ul.appendChild(li);
             });
@@ -755,12 +931,12 @@ HTML_TEMPLATE = """
             `;
             
             try {
-                const response = await fetch(`/api/case/\${caseId}`);
+                const response = await fetch(`/api/case/${caseId}`);
                 const data = await response.json();
                 activeDiagnosis = data.ai_diagnosis;
                 renderWorkspace(data);
             } catch (err) {
-                ws.innerHTML = `<div style="color:var(--danger)">Error querying diagnoser: \${err}</div>`;
+                ws.innerHTML = `<div style="color:var(--danger)">Error querying diagnoser: ${err}</div>`;
             }
         }
 
@@ -775,7 +951,7 @@ HTML_TEMPLATE = """
             let detHTML = '';
             if (det.findings.length === 0) {
                 detHTML = `
-                    <div class="regexfinding-card no-faults" style="padding: 1rem; border-radius: 6px; border: 1px dashed var(--border-color); color: var(--text-secondary)">
+                    <div class="regex-finding-card no-faults" style="padding: 1rem; border-radius: 6px; border: 1px dashed var(--border-color); color: var(--text-secondary)">
                         No syntax faults flagged by regex checker.
                     </div>
                 `;
@@ -784,11 +960,11 @@ HTML_TEMPLATE = """
                     detHTML += `
                         <div class="regex-finding-card">
                             <div class="finding-title">
-                                <span>\${f.rule}</span>
-                                <span class="layer-tag" style="background:#4b5563">\${f.layer}</span>
+                                <span>${f.rule}</span>
+                                <span class="layer-tag" style="background:#4b5563">${f.layer}</span>
                             </div>
-                            <div class="finding-detail">\${f.detail}</div>
-                            <div class="finding-fix">Fix: \${f.suggested_fix}</div>
+                            <div class="finding-detail">${f.detail}</div>
+                            <div class="finding-fix">Fix: ${f.suggested_fix}</div>
                         </div>
                     `;
                 });
@@ -801,27 +977,27 @@ HTML_TEMPLATE = """
                 if (c.review_status === 'Rejected') color = 'var(--danger)';
                 reviewBanner = `
                     <div style="background-color:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:0.8rem 1.2rem; border-radius:6px; font-size:0.85rem; display:flex; justify-content:space-between">
-                        <div>Status: <span style="font-weight:700; color:\${color}">\${c.review_status.toUpperCase()}</span></div>
-                        <div style="color:var(--text-secondary)">Audited by \${review.reviewed_by} | \${new Date(review.reviewed_at).toLocaleTimeString()}</div>
+                        <div>Status: <span style="font-weight:700; color:${color}">${c.review_status.toUpperCase()}</span></div>
+                        <div style="color:var(--text-secondary)">Audited by ${review.reviewed_by} | ${new Date(review.reviewed_at).toLocaleTimeString()}</div>
                     </div>
                 `;
             }
             
             ws.innerHTML = `
-                \${reviewBanner}
+                ${reviewBanner}
                 
                 <div class="case-detail-card">
                     <div class="detail-header">
-                        <span class="detail-title">\${c.id}</span>
+                        <span class="detail-title">${c.id}</span>
                         <div class="meta-group">
-                            <span>Domain: <strong>\${c.domain}</strong></span>
+                            <span>Domain: <strong>${c.domain}</strong></span>
                         </div>
                     </div>
                     <div class="meta-group">
-                        <span>Topology: <strong>\${c.topology_notes}</strong></span>
+                        <span>Topology: <strong>${c.topology_notes}</strong></span>
                     </div>
                     <div class="box-symptom">
-                        <strong>Symptom Evidence:</strong> \${c.symptom}
+                        <strong>Symptom Evidence:</strong> ${c.symptom}
                     </div>
                 </div>
                 
@@ -829,14 +1005,14 @@ HTML_TEMPLATE = """
                     <div class="workspace-panel">
                         <div class="w-panel-header">Raw CLI Evidence / Outputs</div>
                         <div class="w-panel-body">
-                            <pre class="terminal-log">\${c.show_outputs}</pre>
+                            <pre class="terminal-log">${c.show_outputs}</pre>
                         </div>
                     </div>
                     
                     <div class="workspace-panel">
                         <div class="w-panel-header">Deterministic Rule Faults</div>
                         <div class="w-panel-body">
-                            \${detHTML}
+                            ${detHTML}
                         </div>
                     </div>
                 </div>
@@ -845,47 +1021,47 @@ HTML_TEMPLATE = """
                 <div class="workspace-panel">
                     <div class="w-panel-header">
                         <span>Structured AI Diagnosis Output</span>
-                        <span style="font-size:0.75rem; color:var(--accent); font-weight:600">\${data.mode === 'api' ? 'Gemini 2.5 Active' : 'Offline Mock Fallback'}</span>
+                        <span style="font-size:0.75rem; color:var(--accent); font-weight:600">${data.mode === 'api' ? 'Gemini 2.5 Active' : 'Offline Mock Fallback'}</span>
                     </div>
                     <div class="w-panel-body" style="gap:1rem">
                         <div class="form-row">
                             <div class="schema-field">
                                 <div class="field-title">Suspected Fault</div>
-                                <div class="field-content" style="font-weight:600">\${ai.suspected_fault}</div>
+                                <div class="field-content" style="font-weight:600">${ai.suspected_fault}</div>
                             </div>
                             <div class="schema-field">
                                 <div class="field-title">OSI Target Layer</div>
-                                <div class="field-content"><span class="layer-tag">\${ai.osi_layer}</span></div>
+                                <div class="field-content"><span class="layer-tag">${ai.osi_layer}</span></div>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="schema-field">
                                 <div class="field-title">Confidence Rating</div>
-                                <div class="field-content" style="font-weight:600">\${ai.confidence}</div>
+                                <div class="field-content" style="font-weight:600">${ai.confidence}</div>
                             </div>
                             <div class="schema-field">
                                 <div class="field-title">Risk Safety Flag</div>
-                                <div class="field-content" style="color: \${ai.safety_flag.toLowerCase().includes('high') ? 'var(--danger)' : 'var(--success)'}">\${ai.safety_flag}</div>
+                                <div class="field-content" style="color: ${ai.safety_flag.toLowerCase().includes('high') ? 'var(--danger)' : 'var(--success)'}">${ai.safety_flag}</div>
                             </div>
                         </div>
                         
                         <div class="schema-field">
                             <div class="field-title">Evidence Extracted from Outputs</div>
                             <div class="field-content" style="font-family:'Fira Code', monospace; font-size:0.82rem; color:var(--accent)">
-                                \${ai.evidence_extracted.map(x => `• \${x}`).join('<br>')}
+                                ${ai.evidence_extracted.map(x => `• ${x}`).join('<br>')}
                             </div>
                         </div>
                         
                         <div class="schema-field">
                             <div class="field-title">Next Verification Command</div>
-                            <div class="field-content" style="font-family:'Fira Code', monospace; color:#38bdf8">\${ai.next_verification_command}</div>
+                            <div class="field-content" style="font-family:'Fira Code', monospace; color:#38bdf8">${ai.next_verification_command}</div>
                         </div>
                         
                         <div class="schema-field">
                             <div class="field-title">Remediation Steps</div>
                             <div class="field-content" style="font-family:'Fira Code', monospace; color:var(--success)">
-                                \${ai.remediation_steps.map(x => `• \${x}`).join('<br>')}
+                                ${ai.remediation_steps.map(x => `• ${x}`).join('<br>')}
                             </div>
                         </div>
                     </div>
@@ -907,16 +1083,16 @@ HTML_TEMPLATE = """
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Suspected Fault</label>
-                                <input type="text" id="form-fault" value="\${ai.suspected_fault}">
+                                <input type="text" id="form-fault" value="${ai.suspected_fault}">
                             </div>
                             <div class="form-group">
                                 <label>OSI Layer</label>
                                 <select id="form-layer">
-                                    <option value="Layer 1" \${ai.osi_layer === 'Layer 1' ? 'selected' : ''}>Layer 1</option>
-                                    <option value="Layer 2" \${ai.osi_layer === 'Layer 2' ? 'selected' : ''}>Layer 2</option>
-                                    <option value="Layer 3" \${ai.osi_layer === 'Layer 3' ? 'selected' : ''}>Layer 3</option>
-                                    <option value="Layer 4" \${ai.osi_layer === 'Layer 4' ? 'selected' : ''}>Layer 4</option>
-                                    <option value="Layer 7" \${ai.osi_layer === 'Layer 7' ? 'selected' : ''}>Layer 7</option>
+                                    <option value="Layer 1" ${ai.osi_layer === 'Layer 1' ? 'selected' : ''}>Layer 1</option>
+                                    <option value="Layer 2" ${ai.osi_layer === 'Layer 2' ? 'selected' : ''}>Layer 2</option>
+                                    <option value="Layer 3" ${ai.osi_layer === 'Layer 3' ? 'selected' : ''}>Layer 3</option>
+                                    <option value="Layer 4" ${ai.osi_layer === 'Layer 4' ? 'selected' : ''}>Layer 4</option>
+                                    <option value="Layer 7" ${ai.osi_layer === 'Layer 7' ? 'selected' : ''}>Layer 7</option>
                                 </select>
                             </div>
                         </div>
@@ -925,35 +1101,35 @@ HTML_TEMPLATE = """
                             <div class="form-group">
                                 <label>Confidence</label>
                                 <select id="form-confidence">
-                                    <option value="High" \${ai.confidence === 'High' ? 'selected' : ''}>High</option>
-                                    <option value="Medium" \${ai.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
-                                    <option value="Low" \${ai.confidence === 'Low' ? 'selected' : ''}>Low</option>
+                                    <option value="High" ${ai.confidence === 'High' ? 'selected' : ''}>High</option>
+                                    <option value="Medium" ${ai.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
+                                    <option value="Low" ${ai.confidence === 'Low' ? 'selected' : ''}>Low</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Safety Flag / Risk</label>
-                                <input type="text" id="form-safety" value="\${ai.safety_flag}">
+                                <input type="text" id="form-safety" value="${ai.safety_flag}">
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label>Evidence Extracted (one per line)</label>
-                            <textarea id="form-evidence">\${ai.evidence_extracted.join('\\n')}</textarea>
+                            <textarea id="form-evidence">${ai.evidence_extracted.join('\\n')}</textarea>
                         </div>
                         
                         <div class="form-group">
                             <label>Next Verification Command</label>
-                            <input type="text" id="form-verify" value="\${ai.next_verification_command}">
+                            <input type="text" id="form-verify" value="${ai.next_verification_command}">
                         </div>
                         
                         <div class="form-group">
                             <label>Remediation Steps (one command per line)</label>
-                            <textarea id="form-remediation">\${ai.remediation_steps.join('\\n')}</textarea>
+                            <textarea id="form-remediation">${ai.remediation_steps.join('\\n')}</textarea>
                         </div>
                         
                         <div class="form-group">
                             <label>Auditor Review Notes (Reason for correction)</label>
-                            <input type="text" id="form-notes" placeholder="Explain the correction details for Responsible AI logging..." value="\${review && review.notes ? review.notes : ''}">
+                            <input type="text" id="form-notes" placeholder="Explain the correction details for Responsible AI logging..." value="${review && review.notes ? review.notes : ''}">
                         </div>
                         
                         <div style="display:flex; gap:1rem; margin-top:0.5rem">
@@ -1038,6 +1214,114 @@ HTML_TEMPLATE = """
                 }
             } catch (err) {
                 alert("Network error: " + err);
+            }
+        }
+
+        /* TABS SWAP NAVIGATION */
+        function switchTab(tab) {
+            const auditTab = document.getElementById('tab-audit');
+            const insightsTab = document.getElementById('tab-insights');
+            const sidebar = document.getElementById('sidebar-panel');
+            const workspace = document.getElementById('workspace-div');
+            const insights = document.getElementById('insights-div');
+            
+            if (tab === 'audit') {
+                auditTab.classList.add('active');
+                insightsTab.classList.remove('active');
+                sidebar.style.display = 'flex';
+                workspace.style.display = 'flex';
+                insights.style.display = 'none';
+            } else {
+                auditTab.classList.remove('active');
+                insightsTab.classList.add('active');
+                sidebar.style.display = 'none';
+                workspace.style.display = 'none';
+                insights.style.display = 'flex';
+                loadInsights();
+            }
+        }
+
+        /* INSIGHTS METRICS LOADER */
+        async function loadInsights() {
+            const t = Date.now();
+            document.getElementById('chart-status').src = `/reports/review_status_chart.png?t=${t}`;
+            document.getElementById('chart-layer').src = `/reports/layer_distribution_chart.png?t=${t}`;
+            document.getElementById('chart-determinism').src = `/reports/determinism_chart.png?t=${t}`;
+            
+            try {
+                // Fetch dynamic stats metrics
+                const statsResp = await fetch('/api/stats');
+                const stats = await statsResp.json();
+                
+                document.getElementById('kpi-total').innerText = stats.total_cases;
+                document.getElementById('kpi-accepted').innerText = stats.status_counts.Accepted || 0;
+                document.getElementById('kpi-edited').innerText = stats.status_counts.Edited || 0;
+                
+                const rateVal = stats.reviewed_count > 0 
+                    ? ((stats.status_counts.Accepted || 0) / stats.reviewed_count * 100) 
+                    : 0;
+                
+                document.getElementById('insights-rate-text').innerText = rateVal.toFixed(2) + '%';
+                document.getElementById('insights-rate').innerText = rateVal.toFixed(0) + '%';
+                
+                // SVG Progress Ring calculations: circumference = 2 * PI * r = 201
+                const ring = document.getElementById('insights-ring');
+                const offset = 201 - (rateVal / 100 * 201);
+                ring.style.strokeDashoffset = offset;
+                
+                // Load human corrective reviews list from server reviews endpoint
+                const reviewsResp = await fetch('/api/reviews');
+                const reviews = await reviewsResp.json();
+                
+                const tbody = document.getElementById('log-table-body');
+                tbody.innerHTML = '';
+                
+                const correctiveList = Object.values(reviews).filter(r => r.review_status === 'Edited' || r.review_status === 'Rejected');
+                
+                if (correctiveList.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:var(--text-secondary); padding:2rem;">
+                                No correction overrides logged in the system.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    correctiveList.sort((a, b) => a.case_id.localeCompare(b.case_id));
+                    
+                    correctiveList.forEach(r => {
+                        const tr = document.createElement('tr');
+                        
+                        let badgeColor = 'var(--warning)';
+                        if (r.review_status === 'Rejected') badgeColor = 'var(--danger)';
+                        
+                        const aiFault = r.ai_diagnosis && r.ai_diagnosis.suspected_fault 
+                            ? r.ai_diagnosis.suspected_fault 
+                            : 'Unknown';
+                            
+                        tr.innerHTML = `
+                            <td style="font-weight:600;">
+                                <div>${r.case_id}</div>
+                                <span class="status-badge" style="background-color:rgba(255,255,255,0.02); color:${badgeColor}; border:1px solid ${badgeColor}; padding:0.1rem 0.35rem; font-size:0.68rem; margin-top:0.25rem; display:inline-block;">
+                                    ${r.review_status}
+                                </span>
+                            </td>
+                            <td style="color:var(--text-secondary);">${r.domain}</td>
+                            <td style="color:#f87171; font-size:0.85rem; font-family:'Fira Code', monospace; background-color:rgba(239, 68, 68, 0.02); border-radius:4px; padding:0.8rem;">
+                                ${aiFault}
+                            </td>
+                            <td style="color:#34d399; font-size:0.85rem; font-family:'Fira Code', monospace; background-color:rgba(16, 185, 129, 0.02); border-radius:4px; padding:0.8rem;">
+                                ${r.final_suspected_fault}
+                            </td>
+                            <td style="font-style:italic; font-size:0.88rem;">
+                                ${r.notes || '<span style="color:var(--text-secondary)">No justification provided</span>'}
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading insights:", err);
             }
         }
 
