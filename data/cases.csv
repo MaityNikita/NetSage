@@ -1,0 +1,211 @@
+id,domain,symptom,topology_notes,show_outputs,expected_issue,severity
+CASE-001,VLAN & Trunking,Switches cannot forward traffic between VLAN 10 hosts. CDPs log native VLAN mismatch error.,"Switch-A (Gi0/1) connects to Switch-B (Gi0/1). Switch-A has native VLAN 10, Switch-B has native VLAN 1.","Switch-A# show interfaces trunk
+Port        Mode             Encapsulation  Status        Native vlan
+Gi0/1       on               802.1q         trunking      10
+
+Switch-B# show interfaces trunk
+Port        Mode             Encapsulation  Status        Native vlan
+Gi0/1       on               802.1q         trunking      1
+
+%CDP-4-NATIVE_VLAN_MISMATCH: Native VLAN mismatch detected on GigabitEthernet0/1 (10), with Switch-B GigabitEthernet0/1 (1).",Native VLAN Mismatch,High
+CASE-002,VLAN & Trunking,Switch port Gi0/2 connected to router refuses to establish trunk link. Interface status is trunk-negotiation failed.,Switch-C connects to Router-C via interface Gi0/2.,"Switch-C# show running-config interface GigabitEthernet0/2
+interface GigabitEthernet0/2
+ switchport mode trunk
+! Command rejected: GigabitEthernet0/2 has trunk encapsulation set to Auto. Cannot set mode to Trunk without specifying encapsulation first.",Missing Trunk Encapsulation configuration,High
+CASE-003,VLAN & Trunking,User PC connected to Switch port Fa0/5 cannot access the local Gateway or Server.,User is supposed to be in VLAN 20 (Marketing). Gateway is 192.168.20.1.,"Switch-A# show vlan brief
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Fa0/1, Fa0/2, Fa0/5
+10   Engineering                      active    Fa0/3, Fa0/4
+20   Marketing                        active    Fa0/6, Fa0/7
+
+Switch-A# show interfaces FastEthernet0/5 switchport
+Name: Fa0/5
+Switchport: Enabled
+Administrative Mode: static access
+Operational Mode: static access
+Administrative Access VLAN: 1 (default)
+Operational Access VLAN: 1 (default)",Access port mapped to wrong VLAN,Medium
+CASE-004,VLAN & Trunking,Finance department computers connected to VLAN 30 cannot reach resources or obtain IP. Config shows switchports mapped to VLAN 30.,Switch-D has ports Fa0/10 to Fa0/15 assigned to switchport access vlan 30.,"Switch-D# show running-config | section interface
+interface FastEthernet0/10
+ switchport access vlan 30
+ switchport mode access
+
+Switch-D# show vlan brief
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Fa0/1, Fa0/2, Fa0/3
+10   Engineering                      active    Fa0/4, Fa0/5
+20   Marketing                        active    Fa0/6, Fa0/7
+! VLAN 30 is missing from the database!",VLAN 30 not created in Switch Database,Critical
+CASE-005,VLAN & Trunking,Trunk port fails to forward traffic. Ports bounce and drop interface status repeatedly.,Switch-X (Fa0/24) connects to Switch-Y (Fa0/24). Dynamic trunking protocol (DTP) is mismatched.,"Switch-X# show interfaces FastEthernet0/24 switchport
+Administrative Mode: dynamic desirable
+Operational Mode: access
+
+Switch-Y# show interfaces FastEthernet0/24 switchport
+Administrative Mode: dynamic auto
+Negotiation of Trunking: Off
+! Switch-Y has trunk negotiation disabled, preventing trunk forming.",Trunking negotiation mode mismatch,Medium
+CASE-006,Addressing & Gateway,Host-A (192.168.1.50) cannot ping Host-B (192.168.1.130) even though they are plugged into the same switch.,Both hosts share a flat network interface but use different subnet masks.,"Host-A> ipconfig /all
+IPv4 Address. . . . . . . . . . . : 192.168.1.50
+Subnet Mask . . . . . . . . . . . : 255.255.255.0
+
+Host-B> ipconfig /all
+IPv4 Address. . . . . . . . . . . : 192.168.1.130
+Subnet Mask . . . . . . . . . . . : 255.255.255.128
+! Host-B sees Host-A as being in a different subnet and forwards packets to gateway instead of local ARP.",Subnet mask mismatch on local hosts,High
+CASE-007,Addressing & Gateway,Router-A logs console errors. OSPF neighbors drop state constantly. Hosts report intermittent network drops.,Router-A (Gig0/0) and Router-B (Loopback 0) share the same IP address.,"Router-A# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet0/0     10.0.0.1        YES manual up                    up
+
+%IP-4-DUPADDR: Duplicate address 10.0.0.1 on GigabitEthernet0/0, sourced by mac 0060.2f88.1a01",Duplicate IP address configured on OSPF loopback/interface,Critical
+CASE-008,Addressing & Gateway,PC-1 can ping local printers but cannot access external internet pages or the corporate server in another subnet.,PC-1 is in subnet 10.1.1.0/24. Local router interface is 10.1.1.254.,"PC-1> ipconfig
+IPv4 Address. . . . . . . . . . . : 10.1.1.15
+Subnet Mask . . . . . . . . . . . : 255.255.255.0
+Default Gateway . . . . . . . . . : 10.1.1.1
+
+Router# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet0/1     10.1.1.254      YES manual up                    up",Incorrect Default Gateway IP configured on host,High
+CASE-009,Addressing & Gateway,New office computers cannot get DHCP addresses. Interface link status is up. Older hosts operate fine.,"A small /29 subnet is configured for a branch office DHCP pool, which has run out of addresses.","BranchRouter# show ip dhcp pool
+Pool BRANCH_POOL :
+ Scope address range          : 192.168.1.1    - 192.168.1.6
+ Excluded addresses           : 192.168.1.1
+ Leased addresses             : 5
+ Pending addresses            : 0
+ Current index                : 192.168.1.7
+! Subnet is /29 (usable 192.168.1.2-192.168.1.6). All leases are exhausted.",IP pool range exhaustion on a /29 subnet,High
+CASE-010,Addressing & Gateway,Entire branch subnet loses connection to core network. Gateway interface Gig0/0 reports administratively down.,Router-Branch-01 gateway interface Gig0/0 is configured with shutdown.,"Router-Branch-01# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet0/0     192.168.5.1     YES manual administratively down down",Gateway interface is administratively shut down,Critical
+CASE-011,DHCP & DNS,"DHCP clients are not receiving IP configuration. Logs show DHCP requests arriving on router, but no leases granted.",Router DHCP pool configuration is active but depleted.,"Router# show ip dhcp pool SALES
+Pool SALES :
+ Scope address range          : 10.10.10.10    - 10.10.10.20
+ Leased addresses             : 11
+ Excluded addresses           : 10.10.10.10
+! DHCP Pool is fully exhausted (11 hosts allocated all IPs in scope).",DHCP pool range exhaustion,High
+CASE-012,DHCP & DNS,DHCP Clients on VLAN 10 fail to acquire an IP address and autoconfigure with APIPA 169.254.x.x. The DHCP Server is on VLAN 50.,VLAN 10 gateway is Router Gig0/0.10. DHCP Server is 10.50.50.5.,"Router# show running-config interface GigabitEthernet0/0.10
+interface GigabitEthernet0/0.10
+ encapsulation dot1Q 10
+ ip address 10.10.10.1 255.255.255.0
+! Missing DHCP relay helper-address pointing to 10.50.50.5",Missing ip helper-address DHCP relay configuration,Critical
+CASE-013,DHCP & DNS,Users can access servers by IP address but cannot load any websites by name (e.g. google.com fails).,"Hosts receive DNS IP 192.168.1.250 from DHCP, but active DNS server is 192.168.1.10.","Router# show running-config | include ip dhcp pool
+ip dhcp pool VLAN_10
+ network 192.168.1.0 255.255.255.0
+ dns-server 192.168.1.250
+ default-router 192.168.1.1
+! Active DNS Server in topology is 192.168.1.10. 192.168.1.250 is empty.",DNS Server IP misconfigured in DHCP options,Medium
+CASE-014,DHCP & DNS,DNS resolution fails for all external domains. Inside clients cannot query DNS server 8.8.8.8.,Edge Router has an ACL applied outbound that denies UDP port 53 traffic.,"EdgeRouter# show access-lists
+Extended IP access list 101
+    10 deny udp any host 8.8.8.8 eq 53
+    20 permit ip any any",DNS Traffic blocked by Access Control List,High
+CASE-015,Static & Dynamic Routing,"HQ Router can ping branch networks, but branch clients cannot ping HQ because gateway of last resort is not set on Branch.",Branch router has no default static route configured.,"BranchRouter# show ip route
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+
+Gateway of last resort is not set
+
+     192.168.10.0/24 is variably subnetted, 2 subnets, 2 masks
+C       192.168.10.0/24 is directly connected, GigabitEthernet0/1
+L       192.168.10.254/32 is directly connected, GigabitEthernet0/1",Default static route (0.0.0.0/0) missing on Branch Router,Critical
+CASE-016,Static & Dynamic Routing,OSPF neighbor relationship not establishing between Core-Router and WAN-Router.,Core-Router is configured with GigabitEthernet0/1 as a passive-interface.,"Core-Router# show ip ospf neighbor
+! Output is empty
+
+Core-Router# show ip ospf interface GigabitEthernet0/1
+GigabitEthernet0/1 is up, line protocol is up
+  Internet Address 10.1.1.1/30, Area 0
+  Process ID 1, Router ID 1.1.1.1, Network Type BROADCAST, Cost: 1
+  Transmit Delay is 1 sec, State WAITING, Priority 1
+  Timer intervals configured, Hello 10, Dead 40, Wait 40, Retransmit 5
+    No Hellos (Passive Interface)",OSPF passive-interface configured on active peering link,High
+CASE-017,Static & Dynamic Routing,"OSPF neighbors are not exchanging routes. The network statements are configured, but OSPF is not active on interface.",Core-Router has incorrect wildcard mask in OSPF network statement.,"Core-Router# show running-config | section ospf
+router ospf 1
+ log-adjacency-changes
+ network 192.168.1.0 255.255.255.0 area 0
+! OSPF network statement uses subnet mask instead of wildcard format 0.0.0.255.",Incorrect wildcard mask in OSPF network statement,High
+CASE-018,Static & Dynamic Routing,Pings to remote subnet 172.16.1.0/24 fail. Route is present but status is down.,Branch route points to Serial0/1/0 which is in down state.,"BranchRouter# show ip route static
+S*    0.0.0.0/0 [1/0] via 203.0.113.1, Serial0/1/0
+
+BranchRouter# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+Serial0/1/0            203.0.113.2     YES manual down                  down",Static route points to down physical interface,High
+CASE-019,Static & Dynamic Routing,"Administrators configured static route for backup link, but traffic is not using it and OSPF routes are missing.",A floating static route was configured but overridden because dynamic protocols have lower administrative distance.,"Router# show running-config | include ip route
+ip route 10.10.10.0 255.255.255.0 192.168.1.1 5
+! Static route was configured with AD of 5, which is lower than dynamic routing. This overrides active dynamic routes unexpectedly.",Static route administrative distance overriding active routing protocol,Medium
+CASE-020,Static & Dynamic Routing,BGP connection state is stuck in Active or Idle. TCP connection fails to establish.,BGP peer routers have mismatched password authentication strings.,"Router-A# show running-config | section bgp
+router bgp 65001
+ neighbor 10.1.1.2 remote-as 65002
+ neighbor 10.1.1.2 password CISCO123
+
+Router-B# show running-config | section bgp
+router bgp 65002
+ neighbor 10.1.1.1 remote-as 65001
+ neighbor 10.1.1.1 password cisco123
+! Password mismatch: CISCO123 vs cisco123",BGP MD5 authentication password mismatch,Medium
+CASE-021,ACL & Traffic Filtering,Administrator cannot SSH to the router from any subnet. Interface ACL is dropping connection.,Inbound ACL 100 on interface Gig0/1 blocks TCP port 22.,"Router# show access-lists
+Extended IP access list 100
+    10 deny tcp any any eq 22
+    20 permit ip any any
+
+Router# show ip interface GigabitEthernet0/1 | include access list
+  Inbound  access list is 100
+  Outbound access list is not set",Inbound ACL blocking SSH access on interface,High
+CASE-022,ACL & Traffic Filtering,Web server traffic connects successfully but ping test to internal clients fails. Network firewall blocks ICMP return.,Extended ACL denies all return ICMP traffic due to implicit deny.,"Router# show access-lists
+Extended IP access list 102
+    10 permit tcp any any eq 80
+    20 permit tcp any any eq 443
+! No permit statement for ICMP traffic exists. Implicit deny drops return ICMP.",ICMP packets dropped by ACL implicit deny,Medium
+CASE-023,ACL & Traffic Filtering,Users on local LAN cannot reach external networks after security group applied an inbound blocking ACL. Security group claims they applied it out.,ACL is applied in the wrong direction (out instead of in) on the internal LAN interface.,"Router# show ip interface GigabitEthernet0/0 | include access list
+  Inbound  access list is not set
+  Outbound access list is 103
+! GigabitEthernet0/0 is the LAN interface. Applying filter OUT blocks traffic flowing to the LAN.",Access-list applied in wrong direction on router interface,High
+CASE-024,ACL & Traffic Filtering,Branch office users can access insecure websites (http) but secure websites (https) timeout.,Extended access-list blocks port 443 outbound.,"Router# show access-lists 105
+Extended IP access list 105
+    10 permit tcp any any eq 80
+    20 deny tcp any any eq 443
+    30 permit ip any any",Access-list blocking secure HTTPS port 443 traffic,High
+CASE-025,NAT / PAT,LAN hosts cannot browse external internet pages. NAT translations are empty.,NAT tags are missing on inside/outside interfaces.,"EdgeRouter# show ip nat translations
+! Output is empty
+
+EdgeRouter# show running-config | section interface
+interface GigabitEthernet0/0
+ description Inside LAN
+ ip address 192.168.1.1 255.255.255.0
+interface GigabitEthernet0/1
+ description Outside WAN
+ ip address 203.0.113.2 255.255.255.252
+! Inside and Outside tags are missing from interfaces.",Missing ip nat inside/outside tags on interfaces,Critical
+CASE-026,NAT / PAT,"Client PCs in subnet 192.168.20.0/24 fail to connect to internet, while clients in 192.168.10.0/24 connect normally.",NAT Access-list does not permit the 192.168.20.0/24 client range.,"EdgeRouter# show running-config | include ip nat inside source
+ip nat inside source list 1 interface GigabitEthernet0/1 overload
+
+EdgeRouter# show access-lists 1
+Standard IP access list 1
+    10 permit 192.168.10.0 0.0.0.255
+! ACL 1 does not permit 192.168.20.0/24 range, preventing NAT translation.",NAT ACL missing permitted subnet range,High
+CASE-027,NAT / PAT,"Users experience intermittent connection drops. Some hosts connect fine, others time out immediately.",NAT pool has run out of public IP addresses.,"EdgeRouter# show ip nat statistics
+Total active translations: 1000
+Dynamic mappings:
+-- Inside Source
+[list 10 pool OVERLOAD_POOL refcount 1000]
+  pool OVERLOAD_POOL: netmask 255.255.255.252
+    start 203.0.113.10 end 203.0.113.10
+    allocated 1000 misses 153
+! 153 translation misses due to pool IP exhaustion.",NAT IP address pool exhaustion,High
+CASE-028,Wireless / Isolation,Guest wireless users report they can access company core databases and configuration portals.,Guest SSID is mapped to the internal corporate VLAN instead of isolated guest VLAN.,"WLC# show wlan summary
+Number of WLANs.................................. 2
+WLAN ID  WLAN Profile Name    SSID          Status    Interface Name
+-------  -----------------  ------------  --------  ----------------
+1        Corp-Wi-Fi         Corp-Secure   UP        corporate-vlan10
+2        Guest-Wi-Fi        Guest-Free    UP        corporate-vlan10
+! Guest SSID maps to corporate-vlan10 (internal subnet) instead of isolated guest-vlan50.",Guest wireless SSID mapped to corporate VLAN subnet,High
+CASE-029,Wireless / Isolation,Staff laptops cannot associate with the new corporate SSID. AP signal strength is high.,WLC security settings do not match client capabilities (WPA2 vs WPA3 mismatch).,"WLC# show wlan 1
+WLAN Identifier.................................. 1
+Profile Name..................................... Corp-Secure
+SSID............................................. Corp-Secure
+Security Policy.................................. WPA3-Enterprise
+! Security configuration enforces WPA3 enterprise, while company laptop adapters only support WPA2.",SSID encryption policy security mismatch,Medium
+CASE-030,Wireless / Isolation,Wireless access points (APs) fail to register with the wireless controller. AP status remains offline.,"Switch port for AP is assigned to the wrong native VLAN, preventing CAPWAP sync.","Switch# show running-config interface FastEthernet0/12
+interface FastEthernet0/12
+ description Access Point Port
+ switchport access vlan 99
+ switchport mode access
+! Switch port is assigned to guest VLAN 99, but AP CAPWAP management requires native VLAN 10.",Access Point switch port mapped to incorrect VLAN,High
