@@ -1,0 +1,1328 @@
+{
+  "CASE-001": {
+    "case_id": "CASE-001",
+    "domain": "VLAN & Trunking",
+    "symptom": "Switches cannot forward traffic between VLAN 10 hosts. CDPs log native VLAN mismatch error.",
+    "topology_notes": "Switch-A (Gi0/1) connects to Switch-B (Gi0/1). Switch-A has native VLAN 10, Switch-B has native VLAN 1.",
+    "show_outputs": "Switch-A# show interfaces trunk\nPort        Mode             Encapsulation  Status        Native vlan\nGi0/1       on               802.1q         trunking      10\n\nSwitch-B# show interfaces trunk\nPort        Mode             Encapsulation  Status        Native vlan\nGi0/1       on               802.1q         trunking      1\n\n%CDP-4-NATIVE_VLAN_MISMATCH: Native VLAN mismatch detected on GigabitEthernet0/1 (10), with Switch-B GigabitEthernet0/1 (1).",
+    "deterministic_findings": {
+      "deterministic_faults_found": 1,
+      "findings": [
+        {
+          "rule": "NATIVE_VLAN_MISMATCH",
+          "layer": "Layer 2",
+          "detail": "Trunk port native VLANs do not match across links",
+          "suggested_fix": "switchport trunk native vlan <id>"
+        }
+      ]
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Trunk port native VLAN mismatch across switch links",
+      "osi_layer": "Layer 2",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Gi0/1       on               802.1q         trunking      10",
+        "Gi0/1       on               802.1q         trunking      1",
+        "Native VLAN mismatch detected on GigabitEthernet0/1 (10), with Switch-B GigabitEthernet0/1 (1)"
+      ],
+      "next_verification_command": "show interfaces trunk",
+      "remediation_steps": [
+        "interface GigabitEthernet0/1",
+        "switchport trunk native vlan 10"
+      ],
+      "safety_flag": "Low Risk (Trunk status remains active, but mismatch log clears)"
+    },
+    "review_status": "Edited",
+    "reviewed_by": "Human Auditor (Web)",
+    "reviewed_at": "2026-08-30T15:46:49.314384",
+    "final_suspected_fault": "Trunk port native VLAN mismatch across switch links",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Gi0/1       on               802.1q         trunking      10",
+      "Gi0/1       on               802.1q         trunking      1",
+      "Native VLAN mismatch detected on GigabitEthernet0/1 (10), with Switch-B GigabitEthernet0/1 (1)"
+    ],
+    "final_next_verification_command": "show interfaces trunk",
+    "final_remediation_steps": [
+      "interface GigabitEthernet0/1",
+      "switchport trunk native vlan 10"
+    ],
+    "final_safety_flag": "Low Risk (Trunk status remains active, but mismatch log clears)",
+    "notes": "Aesthetic verification test of dynamic HITL logging"
+  },
+  "CASE-002": {
+    "case_id": "CASE-002",
+    "domain": "VLAN & Trunking",
+    "symptom": "Switch port Gi0/2 connected to router refuses to establish trunk link. Interface status is trunk-negotiation failed.",
+    "topology_notes": "Switch-C connects to Router-C via interface Gi0/2.",
+    "show_outputs": "Switch-C# show running-config interface GigabitEthernet0/2\ninterface GigabitEthernet0/2\n switchport mode trunk\n! Command rejected: GigabitEthernet0/2 has trunk encapsulation set to Auto. Cannot set mode to Trunk without specifying encapsulation first.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Switchport trunk mode set without configuring encapsulation type first",
+      "osi_layer": "Layer 2",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Command rejected: GigabitEthernet0/2 has trunk encapsulation set to Auto. Cannot set mode to Trunk without specifying encapsulation first."
+      ],
+      "next_verification_command": "show interface GigabitEthernet0/2 switchport",
+      "remediation_steps": [
+        "interface GigabitEthernet0/2",
+        "switchport trunk encapsulation dot1q",
+        "switchport mode trunk"
+      ],
+      "safety_flag": "Medium Risk (Temporarily bounces port state to apply trunk settings)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151624",
+    "final_suspected_fault": "Switchport trunk mode set without configuring encapsulation type first",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Command rejected: GigabitEthernet0/2 has trunk encapsulation set to Auto. Cannot set mode to Trunk without specifying encapsulation first."
+    ],
+    "final_next_verification_command": "show interface GigabitEthernet0/2 switchport",
+    "final_remediation_steps": [
+      "interface GigabitEthernet0/2",
+      "switchport trunk encapsulation dot1q",
+      "switchport mode trunk"
+    ],
+    "final_safety_flag": "Medium Risk (Temporarily bounces port state to apply trunk settings)",
+    "notes": ""
+  },
+  "CASE-003": {
+    "case_id": "CASE-003",
+    "domain": "VLAN & Trunking",
+    "symptom": "User PC connected to Switch port Fa0/5 cannot access the local Gateway or Server.",
+    "topology_notes": "User is supposed to be in VLAN 20 (Marketing). Gateway is 192.168.20.1.",
+    "show_outputs": "Switch-A# show vlan brief\nVLAN Name                             Status    Ports\n---- -------------------------------- --------- -------------------------------\n1    default                          active    Fa0/1, Fa0/2, Fa0/5\n10   Engineering                      active    Fa0/3, Fa0/4\n20   Marketing                        active    Fa0/6, Fa0/7\n\nSwitch-A# show interfaces FastEthernet0/5 switchport\nName: Fa0/5\nSwitchport: Enabled\nAdministrative Mode: static access\nOperational Mode: static access\nAdministrative Access VLAN: 1 (default)\nOperational Access VLAN: 1 (default)",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Access port Fa0/5 is incorrectly assigned to default VLAN 1 instead of VLAN 20",
+      "osi_layer": "Layer 2",
+      "confidence": "High",
+      "evidence_extracted": [
+        "1    default                          active    Fa0/1, Fa0/2, Fa0/5",
+        "Administrative Access VLAN: 1 (default)",
+        "Operational Access VLAN: 1 (default)"
+      ],
+      "next_verification_command": "show mac address-table interface FastEthernet0/5",
+      "remediation_steps": [
+        "interface FastEthernet0/5",
+        "switchport access vlan 20"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151691",
+    "final_suspected_fault": "Access port Fa0/5 is incorrectly assigned to default VLAN 1 instead of VLAN 20",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "1    default                          active    Fa0/1, Fa0/2, Fa0/5",
+      "Administrative Access VLAN: 1 (default)",
+      "Operational Access VLAN: 1 (default)"
+    ],
+    "final_next_verification_command": "show mac address-table interface FastEthernet0/5",
+    "final_remediation_steps": [
+      "interface FastEthernet0/5",
+      "switchport access vlan 20"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-004": {
+    "case_id": "CASE-004",
+    "domain": "VLAN & Trunking",
+    "symptom": "Finance department computers connected to VLAN 30 cannot reach resources or obtain IP. Config shows switchports mapped to VLAN 30.",
+    "topology_notes": "Switch-D has ports Fa0/10 to Fa0/15 assigned to switchport access vlan 30.",
+    "show_outputs": "Switch-D# show running-config | section interface\ninterface FastEthernet0/10\n switchport access vlan 30\n switchport mode access\n\nSwitch-D# show vlan brief\nVLAN Name                             Status    Ports\n---- -------------------------------- --------- -------------------------------\n1    default                          active    Fa0/1, Fa0/2, Fa0/3\n10   Engineering                      active    Fa0/4, Fa0/5\n20   Marketing                        active    Fa0/6, Fa0/7\n! VLAN 30 is missing from the database!",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "VLAN 30 is assigned to access ports but has not been created in the VLAN database",
+      "osi_layer": "Layer 2",
+      "confidence": "High",
+      "evidence_extracted": [
+        "switchport access vlan 30",
+        "VLAN 30 is missing from the database!"
+      ],
+      "next_verification_command": "show vlan brief",
+      "remediation_steps": [
+        "vlan 30",
+        "name Finance",
+        "exit"
+      ],
+      "safety_flag": "Low Risk (Creating the VLAN enables immediate frame forwarding on mapped ports)"
+    },
+    "review_status": "Edited",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151750",
+    "final_suspected_fault": "VLAN 30 not created in Switch Database",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "switchport access vlan 30",
+      "VLAN 30 is missing from the database!"
+    ],
+    "final_next_verification_command": "show vlan brief",
+    "final_remediation_steps": [
+      "vlan 30",
+      "name Finance",
+      "exit"
+    ],
+    "final_safety_flag": "Low Risk (Creating the VLAN enables immediate frame forwarding on mapped ports)",
+    "notes": "OSI Layer / VLAN DB Check: AI assumed VLAN 30 was active from configuration. Human corrected it because show vlan brief showed it was not created in switch database."
+  },
+  "CASE-005": {
+    "case_id": "CASE-005",
+    "domain": "VLAN & Trunking",
+    "symptom": "Trunk port fails to forward traffic. Ports bounce and drop interface status repeatedly.",
+    "topology_notes": "Switch-X (Fa0/24) connects to Switch-Y (Fa0/24). Dynamic trunking protocol (DTP) is mismatched.",
+    "show_outputs": "Switch-X# show interfaces FastEthernet0/24 switchport\nAdministrative Mode: dynamic desirable\nOperational Mode: access\n\nSwitch-Y# show interfaces FastEthernet0/24 switchport\nAdministrative Mode: dynamic auto\nNegotiation of Trunking: Off\n! Switch-Y has trunk negotiation disabled, preventing trunk forming.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Trunking negotiation mode mismatch due to auto mode with disabled negotiation",
+      "osi_layer": "Layer 2",
+      "confidence": "Medium",
+      "evidence_extracted": [
+        "Administrative Mode: dynamic desirable",
+        "Administrative Mode: dynamic auto",
+        "Negotiation of Trunking: Off"
+      ],
+      "next_verification_command": "show interfaces FastEthernet0/24 trunk",
+      "remediation_steps": [
+        "interface FastEthernet0/24",
+        "switchport mode trunk"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151788",
+    "final_suspected_fault": "Trunking negotiation mode mismatch due to auto mode with disabled negotiation",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "Medium",
+    "final_evidence_extracted": [
+      "Administrative Mode: dynamic desirable",
+      "Administrative Mode: dynamic auto",
+      "Negotiation of Trunking: Off"
+    ],
+    "final_next_verification_command": "show interfaces FastEthernet0/24 trunk",
+    "final_remediation_steps": [
+      "interface FastEthernet0/24",
+      "switchport mode trunk"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-006": {
+    "case_id": "CASE-006",
+    "domain": "Addressing & Gateway",
+    "symptom": "Host-A (192.168.1.50) cannot ping Host-B (192.168.1.130) even though they are plugged into the same switch.",
+    "topology_notes": "Both hosts share a flat network interface but use different subnet masks.",
+    "show_outputs": "Host-A> ipconfig /all\nIPv4 Address. . . . . . . . . . . : 192.168.1.50\nSubnet Mask . . . . . . . . . . . : 255.255.255.0\n\nHost-B> ipconfig /all\nIPv4 Address. . . . . . . . . . . : 192.168.1.130\nSubnet Mask . . . . . . . . . . . : 255.255.255.128\n! Host-B sees Host-A as being in a different subnet and forwards packets to gateway instead of local ARP.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Subnet mask mismatch on local LAN hosts",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Subnet Mask . . . . . . . . . . . : 255.255.255.0",
+        "Subnet Mask . . . . . . . . . . . : 255.255.255.128"
+      ],
+      "next_verification_command": "ping 192.168.1.130",
+      "remediation_steps": [
+        "! Modify client Host-B network adapter subnet mask",
+        "Set Subnet Mask to 255.255.255.0"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151818",
+    "final_suspected_fault": "Subnet mask mismatch on local LAN hosts",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Subnet Mask . . . . . . . . . . . : 255.255.255.0",
+      "Subnet Mask . . . . . . . . . . . : 255.255.255.128"
+    ],
+    "final_next_verification_command": "ping 192.168.1.130",
+    "final_remediation_steps": [
+      "! Modify client Host-B network adapter subnet mask",
+      "Set Subnet Mask to 255.255.255.0"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-007": {
+    "case_id": "CASE-007",
+    "domain": "Addressing & Gateway",
+    "symptom": "Router-A logs console errors. OSPF neighbors drop state constantly. Hosts report intermittent network drops.",
+    "topology_notes": "Router-A (Gig0/0) and Router-B (Loopback 0) share the same IP address.",
+    "show_outputs": "Router-A# show ip interface brief\nInterface              IP-Address      OK? Method Status                Protocol\nGigabitEthernet0/0     10.0.0.1        YES manual up                    up\n\n%IP-4-DUPADDR: Duplicate address 10.0.0.1 on GigabitEthernet0/0, sourced by mac 0060.2f88.1a01",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Duplicate IP address 10.0.0.1 configured on interface and OSPF loopback",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "%IP-4-DUPADDR: Duplicate address 10.0.0.1 on GigabitEthernet0/0, sourced by mac 0060.2f88.1a01"
+      ],
+      "next_verification_command": "show ip interface brief",
+      "remediation_steps": [
+        "interface Loopback0",
+        "ip address 10.0.0.2 255.255.255.255"
+      ],
+      "safety_flag": "High Risk (Changing loopback IP addresses will bounce OSPF router adjacency sessions)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151848",
+    "final_suspected_fault": "Duplicate IP address 10.0.0.1 configured on interface and OSPF loopback",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "%IP-4-DUPADDR: Duplicate address 10.0.0.1 on GigabitEthernet0/0, sourced by mac 0060.2f88.1a01"
+    ],
+    "final_next_verification_command": "show ip interface brief",
+    "final_remediation_steps": [
+      "interface Loopback0",
+      "ip address 10.0.0.2 255.255.255.255"
+    ],
+    "final_safety_flag": "High Risk (Changing loopback IP addresses will bounce OSPF router adjacency sessions)",
+    "notes": ""
+  },
+  "CASE-008": {
+    "case_id": "CASE-008",
+    "domain": "Addressing & Gateway",
+    "symptom": "PC-1 can ping local printers but cannot access external internet pages or the corporate server in another subnet.",
+    "topology_notes": "PC-1 is in subnet 10.1.1.0/24. Local router interface is 10.1.1.254.",
+    "show_outputs": "PC-1> ipconfig\nIPv4 Address. . . . . . . . . . . : 10.1.1.15\nSubnet Mask . . . . . . . . . . . : 255.255.255.0\nDefault Gateway . . . . . . . . . : 10.1.1.1\n\nRouter# show ip interface brief\nInterface              IP-Address      OK? Method Status                Protocol\nGigabitEthernet0/1     10.1.1.254      YES manual up                    up",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Incorrect Default Gateway IP address configured on host PC-1",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Default Gateway . . . . . . . . . : 10.1.1.1",
+        "GigabitEthernet0/1     10.1.1.254      YES manual up                    up"
+      ],
+      "next_verification_command": "route print",
+      "remediation_steps": [
+        "! Change Gateway IP configuration on Host PC-1",
+        "Set Default Gateway to 10.1.1.254"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151878",
+    "final_suspected_fault": "Incorrect Default Gateway IP address configured on host PC-1",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Default Gateway . . . . . . . . . : 10.1.1.1",
+      "GigabitEthernet0/1     10.1.1.254      YES manual up                    up"
+    ],
+    "final_next_verification_command": "route print",
+    "final_remediation_steps": [
+      "! Change Gateway IP configuration on Host PC-1",
+      "Set Default Gateway to 10.1.1.254"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-009": {
+    "case_id": "CASE-009",
+    "domain": "Addressing & Gateway",
+    "symptom": "New office computers cannot get DHCP addresses. Interface link status is up. Older hosts operate fine.",
+    "topology_notes": "A small /29 subnet is configured for a branch office DHCP pool, which has run out of addresses.",
+    "show_outputs": "BranchRouter# show ip dhcp pool\nPool BRANCH_POOL :\n Scope address range          : 192.168.1.1    - 192.168.1.6\n Excluded addresses           : 192.168.1.1\n Leased addresses             : 5\n Pending addresses            : 0\n Current index                : 192.168.1.7\n! Subnet is /29 (usable 192.168.1.2-192.168.1.6). All leases are exhausted.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "IP address range exhaustion in DHCP pool on a narrow /29 subnet",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Scope address range          : 192.168.1.1    - 192.168.1.6",
+        "Leased addresses             : 5",
+        "Current index                : 192.168.1.7"
+      ],
+      "next_verification_command": "show ip dhcp binding",
+      "remediation_steps": [
+        "ip dhcp pool BRANCH_POOL",
+        "no network 192.168.1.0 255.255.255.248",
+        "network 192.168.1.0 255.255.255.0"
+      ],
+      "safety_flag": "High Risk (Reconfiguring pool network overrides active leases and may cause temporary IP drop)"
+    },
+    "review_status": "Edited",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151913",
+    "final_suspected_fault": "IP pool range exhaustion on a /29 subnet",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Scope address range          : 192.168.1.1    - 192.168.1.6",
+      "Leased addresses             : 5",
+      "Current index                : 192.168.1.7"
+    ],
+    "final_next_verification_command": "show ip dhcp binding",
+    "final_remediation_steps": [
+      "ip dhcp pool BRANCH_POOL",
+      "no network 192.168.1.0 255.255.255.248",
+      "network 192.168.1.0 255.255.255.0"
+    ],
+    "final_safety_flag": "High Risk (Reconfiguring pool network overrides active leases and may cause temporary IP drop)",
+    "notes": "Subnet Mask Overlap / Range Exhaustion: AI claimed physical link failure. Human corrected it to /29 subnet range exhaustion."
+  },
+  "CASE-010": {
+    "case_id": "CASE-010",
+    "domain": "Addressing & Gateway",
+    "symptom": "Entire branch subnet loses connection to core network. Gateway interface Gig0/0 reports administratively down.",
+    "topology_notes": "Router-Branch-01 gateway interface Gig0/0 is configured with shutdown.",
+    "show_outputs": "Router-Branch-01# show ip interface brief\nInterface              IP-Address      OK? Method Status                Protocol\nGigabitEthernet0/0     192.168.5.1     YES manual administratively down down",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Branch gateway interface GigabitEthernet0/0 is administratively shut down",
+      "osi_layer": "Layer 1",
+      "confidence": "High",
+      "evidence_extracted": [
+        "GigabitEthernet0/0     192.168.5.1     YES manual administratively down down"
+      ],
+      "next_verification_command": "show interface GigabitEthernet0/0",
+      "remediation_steps": [
+        "interface GigabitEthernet0/0",
+        "no shutdown"
+      ],
+      "safety_flag": "Low Risk (Brings interface online, resolving total link isolation)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151936",
+    "final_suspected_fault": "Branch gateway interface GigabitEthernet0/0 is administratively shut down",
+    "final_osi_layer": "Layer 1",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "GigabitEthernet0/0     192.168.5.1     YES manual administratively down down"
+    ],
+    "final_next_verification_command": "show interface GigabitEthernet0/0",
+    "final_remediation_steps": [
+      "interface GigabitEthernet0/0",
+      "no shutdown"
+    ],
+    "final_safety_flag": "Low Risk (Brings interface online, resolving total link isolation)",
+    "notes": ""
+  },
+  "CASE-011": {
+    "case_id": "CASE-011",
+    "domain": "DHCP & DNS",
+    "symptom": "DHCP clients are not receiving IP configuration. Logs show DHCP requests arriving on router, but no leases granted.",
+    "topology_notes": "Router DHCP pool configuration is active but depleted.",
+    "show_outputs": "Router# show ip dhcp pool SALES\nPool SALES :\n Scope address range          : 10.10.10.10    - 10.10.10.20\n Leased addresses             : 11\n Excluded addresses           : 10.10.10.10\n! DHCP Pool is fully exhausted (11 hosts allocated all IPs in scope).",
+    "deterministic_findings": {
+      "deterministic_faults_found": 1,
+      "findings": [
+        {
+          "rule": "MISSING_DHCP_RELAY",
+          "layer": "Layer 3",
+          "detail": "Broadcast domain lacks ip helper-address pointing to DHCP server",
+          "suggested_fix": "ip helper-address <dhcp-server-ip>"
+        }
+      ]
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "DHCP address pool range exhaustion on the SALES scope",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Scope address range          : 10.10.10.10    - 10.10.10.20",
+        "Leased addresses             : 11"
+      ],
+      "next_verification_command": "show ip dhcp conflict",
+      "remediation_steps": [
+        "ip dhcp pool SALES",
+        "no network 10.10.10.0 255.255.255.240",
+        "network 10.10.10.0 255.255.255.0"
+      ],
+      "safety_flag": "High Risk (Altering IP pool bounds requires resetting leases)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151960",
+    "final_suspected_fault": "DHCP address pool range exhaustion on the SALES scope",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Scope address range          : 10.10.10.10    - 10.10.10.20",
+      "Leased addresses             : 11"
+    ],
+    "final_next_verification_command": "show ip dhcp conflict",
+    "final_remediation_steps": [
+      "ip dhcp pool SALES",
+      "no network 10.10.10.0 255.255.255.240",
+      "network 10.10.10.0 255.255.255.0"
+    ],
+    "final_safety_flag": "High Risk (Altering IP pool bounds requires resetting leases)",
+    "notes": ""
+  },
+  "CASE-012": {
+    "case_id": "CASE-012",
+    "domain": "DHCP & DNS",
+    "symptom": "DHCP Clients on VLAN 10 fail to acquire an IP address and autoconfigure with APIPA 169.254.x.x. The DHCP Server is on VLAN 50.",
+    "topology_notes": "VLAN 10 gateway is Router Gig0/0.10. DHCP Server is 10.50.50.5.",
+    "show_outputs": "Router# show running-config interface GigabitEthernet0/0.10\ninterface GigabitEthernet0/0.10\n encapsulation dot1Q 10\n ip address 10.10.10.1 255.255.255.0\n! Missing DHCP relay helper-address pointing to 10.50.50.5",
+    "deterministic_findings": {
+      "deterministic_faults_found": 1,
+      "findings": [
+        {
+          "rule": "MISSING_DHCP_RELAY",
+          "layer": "Layer 3",
+          "detail": "Broadcast domain lacks ip helper-address pointing to DHCP server",
+          "suggested_fix": "ip helper-address <dhcp-server-ip>"
+        }
+      ]
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Missing ip helper-address DHCP relay configuration on router sub-interface",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "interface GigabitEthernet0/0.10",
+        "encapsulation dot1Q 10",
+        "ip address 10.10.10.1 255.255.255.0"
+      ],
+      "next_verification_command": "show ip helper-address",
+      "remediation_steps": [
+        "interface GigabitEthernet0/0.10",
+        "ip helper-address 10.50.50.5"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.151990",
+    "final_suspected_fault": "Missing ip helper-address DHCP relay configuration on router sub-interface",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "interface GigabitEthernet0/0.10",
+      "encapsulation dot1Q 10",
+      "ip address 10.10.10.1 255.255.255.0"
+    ],
+    "final_next_verification_command": "show ip helper-address",
+    "final_remediation_steps": [
+      "interface GigabitEthernet0/0.10",
+      "ip helper-address 10.50.50.5"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-013": {
+    "case_id": "CASE-013",
+    "domain": "DHCP & DNS",
+    "symptom": "Users can access servers by IP address but cannot load any websites by name (e.g. google.com fails).",
+    "topology_notes": "Hosts receive DNS IP 192.168.1.250 from DHCP, but active DNS server is 192.168.1.10.",
+    "show_outputs": "Router# show running-config | include ip dhcp pool\nip dhcp pool VLAN_10\n network 192.168.1.0 255.255.255.0\n dns-server 192.168.1.250\n default-router 192.168.1.1\n! Active DNS Server in topology is 192.168.1.10. 192.168.1.250 is empty.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "DNS server IP is misconfigured inside the DHCP pool options",
+      "osi_layer": "Layer 7",
+      "confidence": "High",
+      "evidence_extracted": [
+        "dns-server 192.168.1.250",
+        "Active DNS Server in topology is 192.168.1.10. 192.168.1.250 is empty."
+      ],
+      "next_verification_command": "show run | section dhcp",
+      "remediation_steps": [
+        "ip dhcp pool VLAN_10",
+        "no dns-server 192.168.1.250",
+        "dns-server 192.168.1.10"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152030",
+    "final_suspected_fault": "DNS server IP is misconfigured inside the DHCP pool options",
+    "final_osi_layer": "Layer 7",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "dns-server 192.168.1.250",
+      "Active DNS Server in topology is 192.168.1.10. 192.168.1.250 is empty."
+    ],
+    "final_next_verification_command": "show run | section dhcp",
+    "final_remediation_steps": [
+      "ip dhcp pool VLAN_10",
+      "no dns-server 192.168.1.250",
+      "dns-server 192.168.1.10"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-014": {
+    "case_id": "CASE-014",
+    "domain": "DHCP & DNS",
+    "symptom": "DNS resolution fails for all external domains. Inside clients cannot query DNS server 8.8.8.8.",
+    "topology_notes": "Edge Router has an ACL applied outbound that denies UDP port 53 traffic.",
+    "show_outputs": "EdgeRouter# show access-lists\nExtended IP access list 101\n    10 deny udp any host 8.8.8.8 eq 53\n    20 permit ip any any",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Outbound DNS traffic is blocked by access-list rule",
+      "osi_layer": "Layer 4",
+      "confidence": "High",
+      "evidence_extracted": [
+        "10 deny udp any host 8.8.8.8 eq 53"
+      ],
+      "next_verification_command": "show access-lists 101",
+      "remediation_steps": [
+        "no access-list 101 deny udp any host 8.8.8.8 eq 53",
+        "access-list 101 permit udp any host 8.8.8.8 eq 53"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152044",
+    "final_suspected_fault": "Outbound DNS traffic is blocked by access-list rule",
+    "final_osi_layer": "Layer 4",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "10 deny udp any host 8.8.8.8 eq 53"
+    ],
+    "final_next_verification_command": "show access-lists 101",
+    "final_remediation_steps": [
+      "no access-list 101 deny udp any host 8.8.8.8 eq 53",
+      "access-list 101 permit udp any host 8.8.8.8 eq 53"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-015": {
+    "case_id": "CASE-015",
+    "domain": "Static & Dynamic Routing",
+    "symptom": "HQ Router can ping branch networks, but branch clients cannot ping HQ because gateway of last resort is not set on Branch.",
+    "topology_notes": "Branch router has no default static route configured.",
+    "show_outputs": "BranchRouter# show ip route\nCodes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP\n\nGateway of last resort is not set\n\n     192.168.10.0/24 is variably subnetted, 2 subnets, 2 masks\nC       192.168.10.0/24 is directly connected, GigabitEthernet0/1\nL       192.168.10.254/32 is directly connected, GigabitEthernet0/1",
+    "deterministic_findings": {
+      "deterministic_faults_found": 1,
+      "findings": [
+        {
+          "rule": "NO_DEFAULT_ROUTE",
+          "layer": "Layer 3",
+          "detail": "No gateway of last resort configured",
+          "suggested_fix": "ip route 0.0.0.0 0.0.0.0 <next-hop-ip>"
+        }
+      ]
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Default static route (0.0.0.0/0) missing on Branch Router",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Gateway of last resort is not set"
+      ],
+      "next_verification_command": "show ip route",
+      "remediation_steps": [
+        "ip route 0.0.0.0 0.0.0.0 192.168.10.1"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152079",
+    "final_suspected_fault": "Default static route (0.0.0.0/0) missing on Branch Router",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Gateway of last resort is not set"
+    ],
+    "final_next_verification_command": "show ip route",
+    "final_remediation_steps": [
+      "ip route 0.0.0.0 0.0.0.0 192.168.10.1"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-016": {
+    "case_id": "CASE-016",
+    "domain": "Static & Dynamic Routing",
+    "symptom": "OSPF neighbor relationship not establishing between Core-Router and WAN-Router.",
+    "topology_notes": "Core-Router is configured with GigabitEthernet0/1 as a passive-interface.",
+    "show_outputs": "Core-Router# show ip ospf neighbor\n! Output is empty\n\nCore-Router# show ip ospf interface GigabitEthernet0/1\nGigabitEthernet0/1 is up, line protocol is up\n  Internet Address 10.1.1.1/30, Area 0\n  Process ID 1, Router ID 1.1.1.1, Network Type BROADCAST, Cost: 1\n  Transmit Delay is 1 sec, State WAITING, Priority 1\n  Timer intervals configured, Hello 10, Dead 40, Wait 40, Retransmit 5\n    No Hellos (Passive Interface)",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "OSPF passive-interface configured on active peering link GigabitEthernet0/1",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "No Hellos (Passive Interface)",
+        "GigabitEthernet0/1 is up, line protocol is up"
+      ],
+      "next_verification_command": "show ip ospf interface GigabitEthernet0/1",
+      "remediation_steps": [
+        "router ospf 1",
+        "no passive-interface GigabitEthernet0/1"
+      ],
+      "safety_flag": "Medium Risk (Will initiate OSPF hello exchange and build state)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152119",
+    "final_suspected_fault": "OSPF passive-interface configured on active peering link GigabitEthernet0/1",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "No Hellos (Passive Interface)",
+      "GigabitEthernet0/1 is up, line protocol is up"
+    ],
+    "final_next_verification_command": "show ip ospf interface GigabitEthernet0/1",
+    "final_remediation_steps": [
+      "router ospf 1",
+      "no passive-interface GigabitEthernet0/1"
+    ],
+    "final_safety_flag": "Medium Risk (Will initiate OSPF hello exchange and build state)",
+    "notes": ""
+  },
+  "CASE-017": {
+    "case_id": "CASE-017",
+    "domain": "Static & Dynamic Routing",
+    "symptom": "OSPF neighbors are not exchanging routes. The network statements are configured, but OSPF is not active on interface.",
+    "topology_notes": "Core-Router has incorrect wildcard mask in OSPF network statement.",
+    "show_outputs": "Core-Router# show running-config | section ospf\nrouter ospf 1\n log-adjacency-changes\n network 192.168.1.0 255.255.255.0 area 0\n! OSPF network statement uses subnet mask instead of wildcard format 0.0.0.255.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Incorrect subnet wildcard mask (uses subnet mask) in OSPF network configuration",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "network 192.168.1.0 255.255.255.0 area 0"
+      ],
+      "next_verification_command": "show ip ospf interface",
+      "remediation_steps": [
+        "router ospf 1",
+        "no network 192.168.1.0 255.255.255.0 area 0",
+        "network 192.168.1.0 0.0.0.255 area 0"
+      ],
+      "safety_flag": "High Risk (Rebuilding OSPF network statement tears down active area adjacencies momentarily)"
+    },
+    "review_status": "Edited",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152142",
+    "final_suspected_fault": "Incorrect wildcard mask in OSPF network statement",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "network 192.168.1.0 255.255.255.0 area 0"
+    ],
+    "final_next_verification_command": "show ip ospf interface",
+    "final_remediation_steps": [
+      "router ospf 1",
+      "no network 192.168.1.0 255.255.255.0 area 0",
+      "network 192.168.1.0 0.0.0.255 area 0"
+    ],
+    "final_safety_flag": "High Risk (Rebuilding OSPF network statement tears down active area adjacencies momentarily)",
+    "notes": "OSPF Wildcard Error: AI generated standard subnet mask instead of wildcard format in OSPF network statement. Human corrected mask to 0.0.0.255."
+  },
+  "CASE-018": {
+    "case_id": "CASE-018",
+    "domain": "Static & Dynamic Routing",
+    "symptom": "Pings to remote subnet 172.16.1.0/24 fail. Route is present but status is down.",
+    "topology_notes": "Branch route points to Serial0/1/0 which is in down state.",
+    "show_outputs": "BranchRouter# show ip route static\nS*    0.0.0.0/0 [1/0] via 203.0.113.1, Serial0/1/0\n\nBranchRouter# show ip interface brief\nInterface              IP-Address      OK? Method Status                Protocol\nSerial0/1/0            203.0.113.2     YES manual down                  down",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Static route points to a down physical interface Serial0/1/0",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "S*    0.0.0.0/0 [1/0] via 203.0.113.1, Serial0/1/0",
+        "Serial0/1/0            203.0.113.2     YES manual down                  down"
+      ],
+      "next_verification_command": "show ip route 0.0.0.0",
+      "remediation_steps": [
+        "interface Serial0/1/0",
+        "no shutdown"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152171",
+    "final_suspected_fault": "Static route points to a down physical interface Serial0/1/0",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "S*    0.0.0.0/0 [1/0] via 203.0.113.1, Serial0/1/0",
+      "Serial0/1/0            203.0.113.2     YES manual down                  down"
+    ],
+    "final_next_verification_command": "show ip route 0.0.0.0",
+    "final_remediation_steps": [
+      "interface Serial0/1/0",
+      "no shutdown"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-019": {
+    "case_id": "CASE-019",
+    "domain": "Static & Dynamic Routing",
+    "symptom": "Administrators configured static route for backup link, but traffic is not using it and OSPF routes are missing.",
+    "topology_notes": "A floating static route was configured but overridden because dynamic protocols have lower administrative distance.",
+    "show_outputs": "Router# show running-config | include ip route\nip route 10.10.10.0 255.255.255.0 192.168.1.1 5\n! Static route was configured with AD of 5, which is lower than dynamic routing. This overrides active dynamic routes unexpectedly.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Static route administrative distance is overriding active dynamic routes",
+      "osi_layer": "Layer 3",
+      "confidence": "Medium",
+      "evidence_extracted": [
+        "ip route 10.10.10.0 255.255.255.0 192.168.1.1 5"
+      ],
+      "next_verification_command": "show ip route 10.10.10.0",
+      "remediation_steps": [
+        "no ip route 10.10.10.0 255.255.255.0 192.168.1.1 5",
+        "ip route 10.10.10.0 255.255.255.0 192.168.1.1 120"
+      ],
+      "safety_flag": "Medium Risk (Instantly recalculates routing tables)"
+    },
+    "review_status": "Edited",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152193",
+    "final_suspected_fault": "Static route administrative distance overriding active routing protocol",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "Medium",
+    "final_evidence_extracted": [
+      "ip route 10.10.10.0 255.255.255.0 192.168.1.1 5"
+    ],
+    "final_next_verification_command": "show ip route 10.10.10.0",
+    "final_remediation_steps": [
+      "no ip route 10.10.10.0 255.255.255.0 192.168.1.1 5",
+      "ip route 10.10.10.0 255.255.255.0 192.168.1.1 120"
+    ],
+    "final_safety_flag": "Medium Risk (Instantly recalculates routing tables)",
+    "notes": "Static Route Metric Ignorance: AI blamed physical interface, failing to identify that floating static route AD override of 5 was blocking dynamic routing path."
+  },
+  "CASE-020": {
+    "case_id": "CASE-020",
+    "domain": "Static & Dynamic Routing",
+    "symptom": "BGP connection state is stuck in Active or Idle. TCP connection fails to establish.",
+    "topology_notes": "BGP peer routers have mismatched password authentication strings.",
+    "show_outputs": "Router-A# show running-config | section bgp\nrouter bgp 65001\n neighbor 10.1.1.2 remote-as 65002\n neighbor 10.1.1.2 password CISCO123\n\nRouter-B# show running-config | section bgp\nrouter bgp 65002\n neighbor 10.1.1.1 remote-as 65001\n neighbor 10.1.1.1 password cisco123\n! Password mismatch: CISCO123 vs cisco123",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "BGP MD5 password mismatch (case-sensitivity)",
+      "osi_layer": "Layer 4",
+      "confidence": "High",
+      "evidence_extracted": [
+        "neighbor 10.1.1.2 password CISCO123",
+        "neighbor 10.1.1.1 password cisco123"
+      ],
+      "next_verification_command": "show ip bgp summary",
+      "remediation_steps": [
+        "router bgp 65001",
+        "neighbor 10.1.1.2 password cisco123"
+      ],
+      "safety_flag": "Medium Risk (Re-establishes the TCP BGP peering session)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152223",
+    "final_suspected_fault": "BGP MD5 password mismatch (case-sensitivity)",
+    "final_osi_layer": "Layer 4",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "neighbor 10.1.1.2 password CISCO123",
+      "neighbor 10.1.1.1 password cisco123"
+    ],
+    "final_next_verification_command": "show ip bgp summary",
+    "final_remediation_steps": [
+      "router bgp 65001",
+      "neighbor 10.1.1.2 password cisco123"
+    ],
+    "final_safety_flag": "Medium Risk (Re-establishes the TCP BGP peering session)",
+    "notes": ""
+  },
+  "CASE-021": {
+    "case_id": "CASE-021",
+    "domain": "ACL & Traffic Filtering",
+    "symptom": "Administrator cannot SSH to the router from any subnet. Interface ACL is dropping connection.",
+    "topology_notes": "Inbound ACL 100 on interface Gig0/1 blocks TCP port 22.",
+    "show_outputs": "Router# show access-lists\nExtended IP access list 100\n    10 deny tcp any any eq 22\n    20 permit ip any any\n\nRouter# show ip interface GigabitEthernet0/1 | include access list\n  Inbound  access list is 100\n  Outbound access list is not set",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Inbound ACL blocking port 22 SSH traffic on GigabitEthernet0/1 interface",
+      "osi_layer": "Layer 4",
+      "confidence": "High",
+      "evidence_extracted": [
+        "10 deny tcp any any eq 22",
+        "Inbound  access list is 100"
+      ],
+      "next_verification_command": "show ip interface GigabitEthernet0/1",
+      "remediation_steps": [
+        "ip access-list extended 100",
+        "no 10 deny tcp any any eq 22",
+        "10 permit tcp 10.0.0.0 0.255.255.255 any eq 22"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152245",
+    "final_suspected_fault": "Inbound ACL blocking port 22 SSH traffic on GigabitEthernet0/1 interface",
+    "final_osi_layer": "Layer 4",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "10 deny tcp any any eq 22",
+      "Inbound  access list is 100"
+    ],
+    "final_next_verification_command": "show ip interface GigabitEthernet0/1",
+    "final_remediation_steps": [
+      "ip access-list extended 100",
+      "no 10 deny tcp any any eq 22",
+      "10 permit tcp 10.0.0.0 0.255.255.255 any eq 22"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-022": {
+    "case_id": "CASE-022",
+    "domain": "ACL & Traffic Filtering",
+    "symptom": "Web server traffic connects successfully but ping test to internal clients fails. Network firewall blocks ICMP return.",
+    "topology_notes": "Extended ACL denies all return ICMP traffic due to implicit deny.",
+    "show_outputs": "Router# show access-lists\nExtended IP access list 102\n    10 permit tcp any any eq 80\n    20 permit tcp any any eq 443\n! No permit statement for ICMP traffic exists. Implicit deny drops return ICMP.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "ICMP response packets dropped by ACL implicit deny rule",
+      "osi_layer": "Layer 3",
+      "confidence": "Medium",
+      "evidence_extracted": [
+        "Extended IP access list 102",
+        "10 permit tcp any any eq 80",
+        "20 permit tcp any any eq 443"
+      ],
+      "next_verification_command": "show access-lists 102",
+      "remediation_steps": [
+        "ip access-list extended 102",
+        "30 permit icmp any any echo-reply",
+        "40 permit icmp any any unreachable"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152263",
+    "final_suspected_fault": "ICMP response packets dropped by ACL implicit deny rule",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "Medium",
+    "final_evidence_extracted": [
+      "Extended IP access list 102",
+      "10 permit tcp any any eq 80",
+      "20 permit tcp any any eq 443"
+    ],
+    "final_next_verification_command": "show access-lists 102",
+    "final_remediation_steps": [
+      "ip access-list extended 102",
+      "30 permit icmp any any echo-reply",
+      "40 permit icmp any any unreachable"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-023": {
+    "case_id": "CASE-023",
+    "domain": "ACL & Traffic Filtering",
+    "symptom": "Users on local LAN cannot reach external networks after security group applied an inbound blocking ACL. Security group claims they applied it out.",
+    "topology_notes": "ACL is applied in the wrong direction (out instead of in) on the internal LAN interface.",
+    "show_outputs": "Router# show ip interface GigabitEthernet0/0 | include access list\n  Inbound  access list is not set\n  Outbound access list is 103\n! GigabitEthernet0/0 is the LAN interface. Applying filter OUT blocks traffic flowing to the LAN.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Access-list applied in wrong direction (out instead of in) on LAN interface Gig0/0",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "Inbound  access list is not set",
+        "Outbound access list is 103"
+      ],
+      "next_verification_command": "show ip interface GigabitEthernet0/0",
+      "remediation_steps": [
+        "interface GigabitEthernet0/0",
+        "no ip access-group 103 out",
+        "ip access-group 103 in"
+      ],
+      "safety_flag": "High Risk (Swapping ACL direction will drop outgoing packets if ACL rules aren't symmetrical)"
+    },
+    "review_status": "Edited",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152287",
+    "final_suspected_fault": "Access-list applied in wrong direction on router interface",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "Inbound  access list is not set",
+      "Outbound access list is 103"
+    ],
+    "final_next_verification_command": "show ip interface GigabitEthernet0/0",
+    "final_remediation_steps": [
+      "interface GigabitEthernet0/0",
+      "no ip access-group 103 out",
+      "ip access-group 103 in"
+    ],
+    "final_safety_flag": "High Risk (Swapping ACL direction will drop outgoing packets if ACL rules aren't symmetrical)",
+    "notes": "Directional Blindness: AI suggested applying ACL outbound on internal interface Gig0/0. Human corrected direction to inbound."
+  },
+  "CASE-024": {
+    "case_id": "CASE-024",
+    "domain": "ACL & Traffic Filtering",
+    "symptom": "Branch office users can access insecure websites (http) but secure websites (https) timeout.",
+    "topology_notes": "Extended access-list blocks port 443 outbound.",
+    "show_outputs": "Router# show access-lists 105\nExtended IP access list 105\n    10 permit tcp any any eq 80\n    20 deny tcp any any eq 443\n    30 permit ip any any",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Access-list blocking secure HTTPS port 443 traffic",
+      "osi_layer": "Layer 4",
+      "confidence": "High",
+      "evidence_extracted": [
+        "20 deny tcp any any eq 443"
+      ],
+      "next_verification_command": "show access-lists 105",
+      "remediation_steps": [
+        "ip access-list extended 105",
+        "no 20 deny tcp any any eq 443",
+        "20 permit tcp any any eq 443"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152299",
+    "final_suspected_fault": "Access-list blocking secure HTTPS port 443 traffic",
+    "final_osi_layer": "Layer 4",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "20 deny tcp any any eq 443"
+    ],
+    "final_next_verification_command": "show access-lists 105",
+    "final_remediation_steps": [
+      "ip access-list extended 105",
+      "no 20 deny tcp any any eq 443",
+      "20 permit tcp any any eq 443"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-025": {
+    "case_id": "CASE-025",
+    "domain": "NAT / PAT",
+    "symptom": "LAN hosts cannot browse external internet pages. NAT translations are empty.",
+    "topology_notes": "NAT tags are missing on inside/outside interfaces.",
+    "show_outputs": "EdgeRouter# show ip nat translations\n! Output is empty\n\nEdgeRouter# show running-config | section interface\ninterface GigabitEthernet0/0\n description Inside LAN\n ip address 192.168.1.1 255.255.255.0\ninterface GigabitEthernet0/1\n description Outside WAN\n ip address 203.0.113.2 255.255.255.252\n! Inside and Outside tags are missing from interfaces.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Missing ip nat inside/outside tags on interfaces",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "interface GigabitEthernet0/0",
+        "interface GigabitEthernet0/1"
+      ],
+      "next_verification_command": "show running-config interface GigabitEthernet0/0",
+      "remediation_steps": [
+        "interface GigabitEthernet0/0",
+        "ip nat inside",
+        "interface GigabitEthernet0/1",
+        "ip nat outside"
+      ],
+      "safety_flag": "Medium Risk (Enabling NAT inside/outside forces the router to create translation tables)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152340",
+    "final_suspected_fault": "Missing ip nat inside/outside tags on interfaces",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "interface GigabitEthernet0/0",
+      "interface GigabitEthernet0/1"
+    ],
+    "final_next_verification_command": "show running-config interface GigabitEthernet0/0",
+    "final_remediation_steps": [
+      "interface GigabitEthernet0/0",
+      "ip nat inside",
+      "interface GigabitEthernet0/1",
+      "ip nat outside"
+    ],
+    "final_safety_flag": "Medium Risk (Enabling NAT inside/outside forces the router to create translation tables)",
+    "notes": ""
+  },
+  "CASE-026": {
+    "case_id": "CASE-026",
+    "domain": "NAT / PAT",
+    "symptom": "Client PCs in subnet 192.168.20.0/24 fail to connect to internet, while clients in 192.168.10.0/24 connect normally.",
+    "topology_notes": "NAT Access-list does not permit the 192.168.20.0/24 client range.",
+    "show_outputs": "EdgeRouter# show running-config | include ip nat inside source\nip nat inside source list 1 interface GigabitEthernet0/1 overload\n\nEdgeRouter# show access-lists 1\nStandard IP access list 1\n    10 permit 192.168.10.0 0.0.0.255\n! ACL 1 does not permit 192.168.20.0/24 range, preventing NAT translation.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "NAT ACL missing permitted subnet range (does not include 192.168.20.0/24)",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "ip nat inside source list 1 interface GigabitEthernet0/1 overload",
+        "10 permit 192.168.10.0 0.0.0.255"
+      ],
+      "next_verification_command": "show access-lists 1",
+      "remediation_steps": [
+        "access-list 1 permit 192.168.20.0 0.0.0.255"
+      ],
+      "safety_flag": "Low Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152372",
+    "final_suspected_fault": "NAT ACL missing permitted subnet range (does not include 192.168.20.0/24)",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "ip nat inside source list 1 interface GigabitEthernet0/1 overload",
+      "10 permit 192.168.10.0 0.0.0.255"
+    ],
+    "final_next_verification_command": "show access-lists 1",
+    "final_remediation_steps": [
+      "access-list 1 permit 192.168.20.0 0.0.0.255"
+    ],
+    "final_safety_flag": "Low Risk",
+    "notes": ""
+  },
+  "CASE-027": {
+    "case_id": "CASE-027",
+    "domain": "NAT / PAT",
+    "symptom": "Users experience intermittent connection drops. Some hosts connect fine, others time out immediately.",
+    "topology_notes": "NAT pool has run out of public IP addresses.",
+    "show_outputs": "EdgeRouter# show ip nat statistics\nTotal active translations: 1000\nDynamic mappings:\n-- Inside Source\n[list 10 pool OVERLOAD_POOL refcount 1000]\n  pool OVERLOAD_POOL: netmask 255.255.255.252\n    start 203.0.113.10 end 203.0.113.10\n    allocated 1000 misses 153\n! 153 translation misses due to pool IP exhaustion.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "NAT IP address pool exhaustion",
+      "osi_layer": "Layer 3",
+      "confidence": "High",
+      "evidence_extracted": [
+        "allocated 1000 misses 153",
+        "start 203.0.113.10 end 203.0.113.10"
+      ],
+      "next_verification_command": "show ip nat statistics",
+      "remediation_steps": [
+        "ip nat pool OVERLOAD_POOL 203.0.113.10 203.0.113.14 netmask 255.255.255.240"
+      ],
+      "safety_flag": "Medium Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152404",
+    "final_suspected_fault": "NAT IP address pool exhaustion",
+    "final_osi_layer": "Layer 3",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "allocated 1000 misses 153",
+      "start 203.0.113.10 end 203.0.113.10"
+    ],
+    "final_next_verification_command": "show ip nat statistics",
+    "final_remediation_steps": [
+      "ip nat pool OVERLOAD_POOL 203.0.113.10 203.0.113.14 netmask 255.255.255.240"
+    ],
+    "final_safety_flag": "Medium Risk",
+    "notes": ""
+  },
+  "CASE-028": {
+    "case_id": "CASE-028",
+    "domain": "Wireless / Isolation",
+    "symptom": "Guest wireless users report they can access company core databases and configuration portals.",
+    "topology_notes": "Guest SSID is mapped to the internal corporate VLAN instead of isolated guest VLAN.",
+    "show_outputs": "WLC# show wlan summary\nNumber of WLANs.................................. 2\nWLAN ID  WLAN Profile Name    SSID          Status    Interface Name\n-------  -----------------  ------------  --------  ----------------\n1        Corp-Wi-Fi         Corp-Secure   UP        corporate-vlan10\n2        Guest-Wi-Fi        Guest-Free    UP        corporate-vlan10\n! Guest SSID maps to corporate-vlan10 (internal subnet) instead of isolated guest-vlan50.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Guest SSID Guest-Free mapped to internal corporate-vlan10 instead of isolated guest VLAN",
+      "osi_layer": "Layer 2",
+      "confidence": "High",
+      "evidence_extracted": [
+        "2        Guest-Wi-Fi        Guest-Free    UP        corporate-vlan10"
+      ],
+      "next_verification_command": "show wlan summary",
+      "remediation_steps": [
+        "wlan 2",
+        "interface guest-vlan50"
+      ],
+      "safety_flag": "Medium Risk (Disconnects current guest users temporarily while remapping SSID interface)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152457",
+    "final_suspected_fault": "Guest SSID Guest-Free mapped to internal corporate-vlan10 instead of isolated guest VLAN",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "2        Guest-Wi-Fi        Guest-Free    UP        corporate-vlan10"
+    ],
+    "final_next_verification_command": "show wlan summary",
+    "final_remediation_steps": [
+      "wlan 2",
+      "interface guest-vlan50"
+    ],
+    "final_safety_flag": "Medium Risk (Disconnects current guest users temporarily while remapping SSID interface)",
+    "notes": ""
+  },
+  "CASE-029": {
+    "case_id": "CASE-029",
+    "domain": "Wireless / Isolation",
+    "symptom": "Staff laptops cannot associate with the new corporate SSID. AP signal strength is high.",
+    "topology_notes": "WLC security settings do not match client capabilities (WPA2 vs WPA3 mismatch).",
+    "show_outputs": "WLC# show wlan 1\nWLAN Identifier.................................. 1\nProfile Name..................................... Corp-Secure\nSSID............................................. Corp-Secure\nSecurity Policy.................................. WPA3-Enterprise\n! Security configuration enforces WPA3 enterprise, while company laptop adapters only support WPA2.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "SSID encryption policy security mismatch (enforces WPA3, adapters only support WPA2)",
+      "osi_layer": "Layer 7",
+      "confidence": "Medium",
+      "evidence_extracted": [
+        "Security Policy.................................. WPA3-Enterprise"
+      ],
+      "next_verification_command": "show wlan 1",
+      "remediation_steps": [
+        "wlan 1",
+        "security wpa2 wpa3 mixed"
+      ],
+      "safety_flag": "Medium Risk"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152541",
+    "final_suspected_fault": "SSID encryption policy security mismatch (enforces WPA3, adapters only support WPA2)",
+    "final_osi_layer": "Layer 7",
+    "final_confidence": "Medium",
+    "final_evidence_extracted": [
+      "Security Policy.................................. WPA3-Enterprise"
+    ],
+    "final_next_verification_command": "show wlan 1",
+    "final_remediation_steps": [
+      "wlan 1",
+      "security wpa2 wpa3 mixed"
+    ],
+    "final_safety_flag": "Medium Risk",
+    "notes": ""
+  },
+  "CASE-030": {
+    "case_id": "CASE-030",
+    "domain": "Wireless / Isolation",
+    "symptom": "Wireless access points (APs) fail to register with the wireless controller. AP status remains offline.",
+    "topology_notes": "Switch port for AP is assigned to the wrong native VLAN, preventing CAPWAP sync.",
+    "show_outputs": "Switch# show running-config interface FastEthernet0/12\ninterface FastEthernet0/12\n description Access Point Port\n switchport access vlan 99\n switchport mode access\n! Switch port is assigned to guest VLAN 99, but AP CAPWAP management requires native VLAN 10.",
+    "deterministic_findings": {
+      "deterministic_faults_found": 0,
+      "findings": []
+    },
+    "ai_diagnosis": {
+      "suspected_fault": "Access Point switch port mapped to guest VLAN 99 instead of management VLAN 10",
+      "osi_layer": "Layer 2",
+      "confidence": "High",
+      "evidence_extracted": [
+        "switchport access vlan 99"
+      ],
+      "next_verification_command": "show running-config interface FastEthernet0/12",
+      "remediation_steps": [
+        "interface FastEthernet0/12",
+        "switchport access vlan 10"
+      ],
+      "safety_flag": "Medium Risk (Reassigning AP port VLAN forces AP to reboot/reassociate with controller)"
+    },
+    "review_status": "Accepted",
+    "reviewed_by": "Human Auditor (Seed)",
+    "reviewed_at": "2026-08-27T06:54:03.152569",
+    "final_suspected_fault": "Access Point switch port mapped to guest VLAN 99 instead of management VLAN 10",
+    "final_osi_layer": "Layer 2",
+    "final_confidence": "High",
+    "final_evidence_extracted": [
+      "switchport access vlan 99"
+    ],
+    "final_next_verification_command": "show running-config interface FastEthernet0/12",
+    "final_remediation_steps": [
+      "interface FastEthernet0/12",
+      "switchport access vlan 10"
+    ],
+    "final_safety_flag": "Medium Risk (Reassigning AP port VLAN forces AP to reboot/reassociate with controller)",
+    "notes": ""
+  }
+}
