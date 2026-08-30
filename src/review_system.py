@@ -4,8 +4,12 @@ import sys
 import argparse
 import pandas as pd
 from datetime import datetime
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, request, render_template_string, send_from_directory
 from flask_cors import CORS
+
+# Add root directory to sys.path to enable imports of reports module
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from reports.dashboard import generate_dashboard
 
 # Import local engines
 from rule_checker import NetworkRuleChecker
@@ -50,7 +54,7 @@ def save_reviews(reviews):
     """Saves human reviews to JSON."""
     try:
         with open(REVIEWS_JSON, "w", encoding="utf-8") as f:
-           
+            json.dump(reviews, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
         print(f"Error saving reviews: {e}")
@@ -718,22 +722,22 @@ HTML_TEMPLATE = """
             
             cases.forEach(c => {
                 const li = document.createElement('li');
-                li.className = `case-item ${activeCase && activeCase.id === c.id ? 'active' : ''}`;
+                li.className = `case-item \${activeCase && activeCase.id === c.id ? 'active' : ''}`;
                 li.onclick = () => selectCase(c.id);
                 
                 let label = 'Pending';
                 let cls = 'st-pending';
                 if (c.review_status) {
                     label = c.review_status;
-                    cls = `st-${c.review_status.toLowerCase()}`;
+                    cls = `st-\${c.review_status.toLowerCase()}`;
                 }
                 
                 li.innerHTML = `
                     <div class="case-meta">
-                        <span class="case-id">${c.id}</span>
-                        <span class="case-domain">${c.domain}</span>
+                        <span class="case-id">\${c.id}</span>
+                        <span class="case-domain">\${c.domain}</span>
                     </div>
-                    <span class="status-badge ${cls}">${label}</span>
+                    <span class="status-badge \${cls}">\${label}</span>
                 `;
                 ul.appendChild(li);
             });
@@ -751,12 +755,12 @@ HTML_TEMPLATE = """
             `;
             
             try {
-                const response = await fetch(`/api/case/${caseId}`);
+                const response = await fetch(`/api/case/\${caseId}`);
                 const data = await response.json();
                 activeDiagnosis = data.ai_diagnosis;
                 renderWorkspace(data);
             } catch (err) {
-                ws.innerHTML = `<div style="color:var(--danger)">Error querying diagnoser: ${err}</div>`;
+                ws.innerHTML = `<div style="color:var(--danger)">Error querying diagnoser: \${err}</div>`;
             }
         }
 
@@ -780,11 +784,11 @@ HTML_TEMPLATE = """
                     detHTML += `
                         <div class="regex-finding-card">
                             <div class="finding-title">
-                                <span>${f.rule}</span>
-                                <span class="layer-tag" style="background:#4b5563">${f.layer}</span>
+                                <span>\${f.rule}</span>
+                                <span class="layer-tag" style="background:#4b5563">\${f.layer}</span>
                             </div>
-                            <div class="finding-detail">${f.detail}</div>
-                            <div class="finding-fix">Fix: ${f.suggested_fix}</div>
+                            <div class="finding-detail">\${f.detail}</div>
+                            <div class="finding-fix">Fix: \${f.suggested_fix}</div>
                         </div>
                     `;
                 });
@@ -797,27 +801,27 @@ HTML_TEMPLATE = """
                 if (c.review_status === 'Rejected') color = 'var(--danger)';
                 reviewBanner = `
                     <div style="background-color:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:0.8rem 1.2rem; border-radius:6px; font-size:0.85rem; display:flex; justify-content:space-between">
-                        <div>Status: <span style="font-weight:700; color:${color}">${c.review_status.toUpperCase()}</span></div>
-                        <div style="color:var(--text-secondary)">Audited by ${review.reviewed_by} | ${new Date(review.reviewed_at).toLocaleTimeString()}</div>
+                        <div>Status: <span style="font-weight:700; color:\${color}">\${c.review_status.toUpperCase()}</span></div>
+                        <div style="color:var(--text-secondary)">Audited by \${review.reviewed_by} | \${new Date(review.reviewed_at).toLocaleTimeString()}</div>
                     </div>
                 `;
             }
             
             ws.innerHTML = `
-                ${reviewBanner}
+                \${reviewBanner}
                 
                 <div class="case-detail-card">
                     <div class="detail-header">
-                        <span class="detail-title">${c.id}</span>
+                        <span class="detail-title">\${c.id}</span>
                         <div class="meta-group">
-                            <span>Domain: <strong>${c.domain}</strong></span>
+                            <span>Domain: <strong>\${c.domain}</strong></span>
                         </div>
                     </div>
                     <div class="meta-group">
-                        <span>Topology: <strong>${c.topology_notes}</strong></span>
+                        <span>Topology: <strong>\${c.topology_notes}</strong></span>
                     </div>
                     <div class="box-symptom">
-                        <strong>Symptom Evidence:</strong> ${c.symptom}
+                        <strong>Symptom Evidence:</strong> \${c.symptom}
                     </div>
                 </div>
                 
@@ -825,14 +829,14 @@ HTML_TEMPLATE = """
                     <div class="workspace-panel">
                         <div class="w-panel-header">Raw CLI Evidence / Outputs</div>
                         <div class="w-panel-body">
-                            <pre class="terminal-log">${c.show_outputs}</pre>
+                            <pre class="terminal-log">\${c.show_outputs}</pre>
                         </div>
                     </div>
                     
                     <div class="workspace-panel">
                         <div class="w-panel-header">Deterministic Rule Faults</div>
                         <div class="w-panel-body">
-                            ${detHTML}
+                            \${detHTML}
                         </div>
                     </div>
                 </div>
@@ -841,47 +845,47 @@ HTML_TEMPLATE = """
                 <div class="workspace-panel">
                     <div class="w-panel-header">
                         <span>Structured AI Diagnosis Output</span>
-                        <span style="font-size:0.75rem; color:var(--accent); font-weight:600">${data.mode === 'api' ? 'Gemini 2.5 Active' : 'Offline Mock Fallback'}</span>
+                        <span style="font-size:0.75rem; color:var(--accent); font-weight:600">\${data.mode === 'api' ? 'Gemini 2.5 Active' : 'Offline Mock Fallback'}</span>
                     </div>
                     <div class="w-panel-body" style="gap:1rem">
                         <div class="form-row">
                             <div class="schema-field">
                                 <div class="field-title">Suspected Fault</div>
-                                <div class="field-content" style="font-weight:600">${ai.suspected_fault}</div>
+                                <div class="field-content" style="font-weight:600">\${ai.suspected_fault}</div>
                             </div>
                             <div class="schema-field">
                                 <div class="field-title">OSI Target Layer</div>
-                                <div class="field-content"><span class="layer-tag">${ai.osi_layer}</span></div>
+                                <div class="field-content"><span class="layer-tag">\${ai.osi_layer}</span></div>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="schema-field">
                                 <div class="field-title">Confidence Rating</div>
-                                <div class="field-content" style="font-weight:600">${ai.confidence}</div>
+                                <div class="field-content" style="font-weight:600">\${ai.confidence}</div>
                             </div>
                             <div class="schema-field">
                                 <div class="field-title">Risk Safety Flag</div>
-                                <div class="field-content" style="color: ${ai.safety_flag.toLowerCase().includes('high') ? 'var(--danger)' : 'var(--success)'}">${ai.safety_flag}</div>
+                                <div class="field-content" style="color: \${ai.safety_flag.toLowerCase().includes('high') ? 'var(--danger)' : 'var(--success)'}">\${ai.safety_flag}</div>
                             </div>
                         </div>
                         
                         <div class="schema-field">
                             <div class="field-title">Evidence Extracted from Outputs</div>
                             <div class="field-content" style="font-family:'Fira Code', monospace; font-size:0.82rem; color:var(--accent)">
-                                ${ai.evidence_extracted.map(x => `• ${x}`).join('<br>')}
+                                \${ai.evidence_extracted.map(x => `• \${x}`).join('<br>')}
                             </div>
                         </div>
                         
                         <div class="schema-field">
                             <div class="field-title">Next Verification Command</div>
-                            <div class="field-content" style="font-family:'Fira Code', monospace; color:#38bdf8">${ai.next_verification_command}</div>
+                            <div class="field-content" style="font-family:'Fira Code', monospace; color:#38bdf8">\${ai.next_verification_command}</div>
                         </div>
                         
                         <div class="schema-field">
                             <div class="field-title">Remediation Steps</div>
                             <div class="field-content" style="font-family:'Fira Code', monospace; color:var(--success)">
-                                ${ai.remediation_steps.map(x => `• ${x}`).join('<br>')}
+                                \${ai.remediation_steps.map(x => `• \${x}`).join('<br>')}
                             </div>
                         </div>
                     </div>
@@ -903,16 +907,16 @@ HTML_TEMPLATE = """
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Suspected Fault</label>
-                                <input type="text" id="form-fault" value="${ai.suspected_fault}">
+                                <input type="text" id="form-fault" value="\${ai.suspected_fault}">
                             </div>
                             <div class="form-group">
                                 <label>OSI Layer</label>
                                 <select id="form-layer">
-                                    <option value="Layer 1" ${ai.osi_layer === 'Layer 1' ? 'selected' : ''}>Layer 1</option>
-                                    <option value="Layer 2" ${ai.osi_layer === 'Layer 2' ? 'selected' : ''}>Layer 2</option>
-                                    <option value="Layer 3" ${ai.osi_layer === 'Layer 3' ? 'selected' : ''}>Layer 3</option>
-                                    <option value="Layer 4" ${ai.osi_layer === 'Layer 4' ? 'selected' : ''}>Layer 4</option>
-                                    <option value="Layer 7" ${ai.osi_layer === 'Layer 7' ? 'selected' : ''}>Layer 7</option>
+                                    <option value="Layer 1" \${ai.osi_layer === 'Layer 1' ? 'selected' : ''}>Layer 1</option>
+                                    <option value="Layer 2" \${ai.osi_layer === 'Layer 2' ? 'selected' : ''}>Layer 2</option>
+                                    <option value="Layer 3" \${ai.osi_layer === 'Layer 3' ? 'selected' : ''}>Layer 3</option>
+                                    <option value="Layer 4" \${ai.osi_layer === 'Layer 4' ? 'selected' : ''}>Layer 4</option>
+                                    <option value="Layer 7" \${ai.osi_layer === 'Layer 7' ? 'selected' : ''}>Layer 7</option>
                                 </select>
                             </div>
                         </div>
@@ -921,35 +925,35 @@ HTML_TEMPLATE = """
                             <div class="form-group">
                                 <label>Confidence</label>
                                 <select id="form-confidence">
-                                    <option value="High" ${ai.confidence === 'High' ? 'selected' : ''}>High</option>
-                                    <option value="Medium" ${ai.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
-                                    <option value="Low" ${ai.confidence === 'Low' ? 'selected' : ''}>Low</option>
+                                    <option value="High" \${ai.confidence === 'High' ? 'selected' : ''}>High</option>
+                                    <option value="Medium" \${ai.confidence === 'Medium' ? 'selected' : ''}>Medium</option>
+                                    <option value="Low" \${ai.confidence === 'Low' ? 'selected' : ''}>Low</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Safety Flag / Risk</label>
-                                <input type="text" id="form-safety" value="${ai.safety_flag}">
+                                <input type="text" id="form-safety" value="\${ai.safety_flag}">
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label>Evidence Extracted (one per line)</label>
-                            <textarea id="form-evidence">${ai.evidence_extracted.join('\\n')}</textarea>
+                            <textarea id="form-evidence">\${ai.evidence_extracted.join('\\n')}</textarea>
                         </div>
                         
                         <div class="form-group">
                             <label>Next Verification Command</label>
-                            <input type="text" id="form-verify" value="${ai.next_verification_command}">
+                            <input type="text" id="form-verify" value="\${ai.next_verification_command}">
                         </div>
                         
                         <div class="form-group">
                             <label>Remediation Steps (one command per line)</label>
-                            <textarea id="form-remediation">${ai.remediation_steps.join('\\n')}</textarea>
+                            <textarea id="form-remediation">\${ai.remediation_steps.join('\\n')}</textarea>
                         </div>
                         
                         <div class="form-group">
                             <label>Auditor Review Notes (Reason for correction)</label>
-                            <input type="text" id="form-notes" placeholder="Explain the correction details for Responsible AI logging..." value="${review && review.notes ? review.notes : ''}">
+                            <input type="text" id="form-notes" placeholder="Explain the correction details for Responsible AI logging..." value="\${review && review.notes ? review.notes : ''}">
                         </div>
                         
                         <div style="display:flex; gap:1rem; margin-top:0.5rem">
@@ -1034,182 +1038,6 @@ HTML_TEMPLATE = """
                 }
             } catch (err) {
                 alert("Network error: " + err);
-            }
-        }
-
-        window.onload = loadInitData;
-    </script>
-</body>
-</html>
-"""
-    </script>
-</body>
-</html>
-"""
-
-# API endpoint: list cases
-@app.route('/api/cases')
-def api_cases():
-    cases = load_cases()
-    reviews = load_reviews()
-    for c in cases:
-        case_id = c["id"]
-        if case_id in reviews:
-            c["review_status"] = reviews[case_id]["review_status"]
-        else:
-            c["review_status"] = None
-    return jsonify(cases)
-
-# API endpoint: case details and dynamic checkers
-@app.route('/api/case/<case_id>')
-def api_case_detail(case_id):
-    if not c:
-        return jsonify({"error": "Case not found"}), 404
-        
-    symptom = c["symptom"]
-    topology = c["topology_notes"]
-    show_outputs = c["show_outputs"]
-    
-    # 1. Deterministic rules
-    det_findings = NetworkRuleChecker.audit_config(show_outputs)
-    
-    # 2. AI diagnosis
-    ai_diag = ai_diagnoser.diagnose(symptom, topology, show_outputs, case_id)
-    
-    saved_review = reviews.get(case_id, None)
-    if saved_review:
-        c["review_status"] = saved_review["review_status"]
-    else:
-        c["review_status"] = None
-        
-    mode = "api" if ai_diagnoser.api_available else "mock"
-    
-    return jsonify({
-        "case": c,
-        "deterministic_findings": det_findings,
-        "ai_diagnosis": ai_diag,
-        "saved_review": saved_review,
-        "mode": mode
-    })
-
-# API endpoint: submit review
-@app.route('/api/review', methods=['POST'])
-def api_review():
-    data = request.json
-# API endpoint: submit review
-@app.route('/api/review', methods=['POST'])
-def api_review():
-    data = request.json
-    case_id = data.get("case_id")
-    status = data.get("review_status")
-    
-    if not case_id or not status:
-        return jsonify({"success": False, "error": "Missing parameter"}), 400
-        
-    cases = load_cases()
-    c = next((item for item in cases if item["id"] == case_id), None)
-    if not c:
-        return jsonify({"success": False, "error": "Invalid case_id"}), 404
-        
-    reviews = load_reviews()
-    det_findings = NetworkRuleChecker.audit_config(c["show_outputs"])
-    ai_diag = ai_diagnoser.diagnose(c["symptom"], c["topology_notes"], c["show_outputs"], case_id)
-    
-    reviews[case_id] = {
-        "case_id": case_id,
-        "domain": c["domain"],
-        "symptom": c["symptom"],
-        "topology_notes": c["topology_notes"],
-        "show_outputs": c["show_outputs"],
-        "deterministic_findings": det_findings,
-        "ai_diagnosis": ai_diag,
-        "review_status": status,
-        "reviewed_by": "Human Auditor (Web)",
-        "reviewed_at": datetime.now().isoformat(),
-        "final_suspected_fault": data.get("final_suspected_fault", ai_diag.get("suspected_fault")),
-        "final_osi_layer": data.get("final_osi_layer", ai_diag.get("osi_layer")),
-        "final_confidence": data.get("final_confidence", ai_diag.get("confidence")),
-        "final_evidence_extracted": data.get("final_evidence_extracted", ai_diag.get("evidence_extracted", [])),
-        "final_next_verification_command": data.get("final_next_verification_command", ai_diag.get("next_verification_command")),
-        "final_remediation_steps": data.get("final_remediation_steps", ai_diag.get("remediation_steps", [])),
-                        <div style="display:flex; gap:1rem; margin-top:0.5rem">
-                            <button class="action-btn btn-accept" onclick="saveEditedReview()" style="max-width:200px">Save Changes</button>
-                            <button class="action-btn" onclick="toggleEditForm()" style="background:#475569; max-width:120px">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function toggleEditForm() {
-            const form = document.getElementById('correction-block');
-            if (form.style.display === 'flex') {
-                form.style.display = 'none';
-            } else {
-                form.style.display = 'flex';
-                form.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-
-        async function submitReview(status) {
-            let notes = '';
-            if (status === 'Rejected') {
-                notes = prompt("Identify the AI hallucination or error details:");
-                if (notes === null) return;
-            }
-            
-            const payload = {
-                case_id: activeCase.id,
-                review_status: status,
-                final_suspected_fault: status === 'Rejected' ? 'False Positive / Rejected' : activeDiagnosis.suspected_fault,
-                final_osi_layer: status === 'Rejected' ? 'Layer 1' : activeDiagnosis.osi_layer,
-def web_index():
-    return render_template_string(HTML_TEMPLATE)
-
-# ==============================================================================
-# MAIN ROUTING
-# ==============================================================================
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="NetSage AI review system")
-    parser.add_argument('--cli', action='store_true', help="Run in terminal CLI mode.")
-    parser.add_argument('--port', type=int, default=5000, help="Web UI port (Default: 5000)")
-    args = parser.parse_args()
-    
-    if not os.path.exists(CASES_CSV):
-        print(f"[NetSage] Error: {CASES_CSV} does not exist.")
-        sys.exit(1)
-        
-    if args.cli:
-        run_cli_review()
-    else:
-        print(f"[NetSage] Web server running on http://127.0.0.1:{args.port} ...")
-        app.run(debug=True, port=args.port)
-
-                            : 'Unknown';
-                            
-                        tr.innerHTML = `
-                            <td style="font-weight:600;">
-                                <div>${r.case_id}</div>
-                                <span class="status-badge" style="background-color:rgba(255,255,255,0.02); color:${badgeColor}; border:1px solid ${badgeColor}; padding:0.1rem 0.35rem; font-size:0.68rem; margin-top:0.25rem; display:inline-block;">
-                                    ${r.review_status}
-                                </span>
-                            </td>
-                            <td style="color:var(--text-secondary);">${r.domain}</td>
-                            <td style="color:#f87171; font-size:0.85rem; font-family:'Fira Code', monospace; background-color:rgba(239, 68, 68, 0.02); border-radius:4px; padding:0.8rem;">
-                                ${aiFault}
-                            </td>
-                            <td style="color:#34d399; font-size:0.85rem; font-family:'Fira Code', monospace; background-color:rgba(16, 185, 129, 0.02); border-radius:4px; padding:0.8rem;">
-                                ${r.final_suspected_fault}
-                            </td>
-                            <td style="font-style:italic; font-size:0.88rem;">
-                                ${r.notes || '<span style="color:var(--text-secondary)">No justification provided</span>'}
-          
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            } catch (err) {
-                console.error("Error loading insights:", err);
             }
         }
 
@@ -1343,6 +1171,11 @@ def api_stats():
         "status_counts": status_counts
     })
 
+# API endpoint: get all reviews
+@app.route('/api/reviews')
+def api_reviews():
+    return jsonify(load_reviews())
+
 # Main Web App UI page
 @app.route('/')
 def web_index():
@@ -1371,4 +1204,3 @@ if __name__ == '__main__':
             print(f"[NetSage] Warning: Failed to generate initial dashboard: {e}")
         print(f"[NetSage] Web server running on http://127.0.0.1:{args.port} ...")
         app.run(debug=True, port=args.port)
-
